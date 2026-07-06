@@ -1,10 +1,13 @@
 /**
- * 强制法律警示弹窗 — 每次启动必弹，5秒强制倒计时
+ * 法律警示弹窗 — 每次启动展示，用户可随时点击按钮继续
  *
  * 流程：
- * Phase 1: 法律警示（5秒倒计时，按钮禁用）
- * Phase 2: 倒计时结束后，显示作者抖音号引导卡片
- * Phase 3: 用户点击"我已知晓"进入应用
+ * Phase 1: 法律警示（5秒倒计时可视，按钮始终可点击，点击后跳过倒计时）
+ *   - 首次启动：进入 Phase 2（作者抖音号引导）
+ *   - 后续启动：直接进入应用
+ * Phase 2: 作者抖音号引导卡片（仅首次启动显示，localStorage 标记）
+ *
+ * 顶部标语：「对技术最好的使用就是对技术充满敬畏之心」
  *
  * 法律条文引用：
  * - 《刑法》第285条（非法侵入计算机信息系统罪）
@@ -18,6 +21,7 @@ import { Icon } from "@/components/Icon";
 
 const DOUYIN_ID = "Ciao778899";
 const COUNTDOWN_SECONDS = 5;
+const DOUYIN_SHOWN_KEY = "dolphintutor-douyin-shown";
 
 /** 法律条文数据 */
 const LAW_ARTICLES = [
@@ -70,38 +74,52 @@ const CASES = [
 /** 法律警示样式 */
 const WARNING_CSS = `
 @keyframes warning-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
 }
 @keyframes warning-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.5; }
 }
-@keyframes countdown-ring {
-  from { stroke-dashoffset: 0; }
-  to { stroke-dashoffset: 283; }
-}
-.legal-overlay {
-  animation: warning-fade-in 0.3s ease-out;
-}
-.legal-warning-icon {
-  animation: warning-pulse 1.5s ease-in-out infinite;
-}
-.case-card {
-  transition: transform 0.2s;
-}
-.case-card:hover {
-  transform: translateY(-2px);
-}
-.douyin-card {
-  animation: warning-fade-in 0.4s ease-out;
-}
-.scan-line {
-  animation: scan-move 2s linear infinite;
+@keyframes slogan-glow {
+  0%, 100% { text-shadow: 0 0 8px rgba(255,123,36,0.4), 0 0 2px rgba(255,255,255,0.3); }
+  50% { text-shadow: 0 0 16px rgba(255,123,36,0.7), 0 0 4px rgba(255,255,255,0.5); }
 }
 @keyframes scan-move {
   0% { top: 0; }
   100% { top: 100%; }
+}
+@keyframes card-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.legal-overlay {
+  animation: warning-fade-in 0.35s ease-out;
+}
+.legal-warning-icon {
+  animation: warning-pulse 1.5s ease-in-out infinite;
+}
+.slogan-text {
+  animation: slogan-glow 3s ease-in-out infinite;
+}
+.case-card {
+  transition: transform 0.2s, border-color 0.2s;
+}
+.case-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--c-red) !important;
+}
+.douyin-card {
+  animation: card-slide-up 0.4s ease-out;
+}
+.scan-line {
+  animation: scan-move 2s linear infinite;
+}
+.law-article {
+  transition: border-color 0.2s;
+}
+.law-article:hover {
+  border-left-color: var(--c-orange) !important;
 }
 `;
 
@@ -112,33 +130,36 @@ interface LegalWarningProps {
 export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [phase, setPhase] = useState<"warning" | "douyin">("warning");
-  const [scrollRead, setScrollRead] = useState(false);
+  const [countdownActive, setCountdownActive] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 倒计时
+  // 倒计时（仅视觉，不阻止用户操作）
   useEffect(() => {
     if (phase !== "warning") return;
+    if (!countdownActive) return;
     if (countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    const timer = setTimeout(() => {
+      setCountdown((c) => c - 1);
+      if (countdown <= 1) setCountdownActive(false);
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [countdown, phase]);
+  }, [countdown, phase, countdownActive]);
 
-  // 检测是否滚动到底部
-  const handleScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20;
-    if (atBottom) setScrollRead(true);
-  };
-
-  const canProceed = countdown === 0 && scrollRead;
-
+  // 用户点击"我已知晓"按钮 — 随时可点击，跳过倒计时
   const handleProceed = () => {
-    if (!canProceed) return;
-    setPhase("douyin");
+    // 判断是否首次启动（是否已展示过作者卡片）
+    const douyinShown = localStorage.getItem(DOUYIN_SHOWN_KEY);
+    if (douyinShown) {
+      // 后续启动：直接进入应用
+      onComplete();
+    } else {
+      // 首次启动：展示作者抖音号卡片
+      setPhase("douyin");
+    }
   };
 
   const handleFinish = () => {
+    localStorage.setItem(DOUYIN_SHOWN_KEY, "1");
     onComplete();
   };
 
@@ -153,30 +174,58 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
             position: "fixed",
             inset: 0,
             zIndex: 99999,
-            background: "rgba(0,0,0,0.95)",
+            background: "rgba(0,0,0,0.92)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 16,
+            backdropFilter: "blur(4px)",
           }}
         >
           <div
             style={{
               width: "100%",
-              maxWidth: 640,
-              maxHeight: "92vh",
+              maxWidth: 660,
+              maxHeight: "94vh",
               background: "var(--c-dark)",
               border: "2px solid var(--c-red)",
-              boxShadow: "0 0 40px rgba(255,51,51,0.3)",
+              borderRadius: 6,
+              boxShadow: "0 0 60px rgba(255,51,51,0.25), 0 8px 32px rgba(0,0,0,0.6)",
               display: "flex",
               flexDirection: "column",
+              overflow: "hidden",
             }}
           >
+            {/* ===== 顶部标语区 ===== */}
+            <div
+              style={{
+                background: "linear-gradient(180deg, rgba(255,51,51,0.15), transparent)",
+                padding: "16px 20px 12px",
+                textAlign: "center",
+                borderBottom: "1px solid rgba(255,51,51,0.2)",
+                flexShrink: 0,
+              }}
+            >
+              <p
+                className="font-term slogan-text"
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "var(--c-orange)",
+                  margin: 0,
+                  lineHeight: 1.5,
+                  letterSpacing: 1,
+                }}
+              >
+                对技术最好的使用就是对技术充满敬畏之心
+              </p>
+            </div>
+
             {/* 标题栏 — 红色警示 */}
             <div
               style={{
                 background: "var(--c-red)",
-                padding: "10px 16px",
+                padding: "8px 16px",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -184,11 +233,11 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
               }}
             >
               <div className="legal-warning-icon">
-                <Icon name="warning" size={20} style={{ color: "#fff" }} />
+                <Icon name="warning" size={18} style={{ color: "#fff" }} />
               </div>
               <span
                 className="font-pixel"
-                style={{ color: "#fff", fontSize: 11, letterSpacing: 1 }}
+                style={{ color: "#fff", fontSize: 10, letterSpacing: 1 }}
               >
                 ⚠ LEGAL WARNING — 法律警示 ⚠
               </span>
@@ -197,21 +246,21 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
             {/* 可滚动内容区 */}
             <div
               ref={scrollRef}
-              onScroll={handleScroll}
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "14px 16px",
+                padding: "14px 18px",
                 minHeight: 0,
               }}
             >
               {/* 核心警示语 */}
               <div
                 style={{
-                  background: "rgba(255,51,51,0.12)",
-                  border: "1px solid var(--c-red)",
-                  padding: "10px 12px",
-                  marginBottom: 12,
+                  background: "rgba(255,51,51,0.10)",
+                  border: "1px solid rgba(255,51,51,0.4)",
+                  borderRadius: 4,
+                  padding: "12px 14px",
+                  marginBottom: 14,
                 }}
               >
                 <p
@@ -219,7 +268,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                   style={{
                     color: "var(--c-red)",
                     fontSize: 14,
-                    lineHeight: 1.7,
+                    lineHeight: 1.8,
                     margin: 0,
                   }}
                 >
@@ -239,27 +288,29 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
               {LAW_ARTICLES.map((art, i) => (
                 <div
                   key={i}
+                  className="law-article"
                   style={{
-                    marginBottom: 10,
-                    padding: "8px 10px",
+                    marginBottom: 8,
+                    padding: "8px 12px",
                     background: "var(--c-dark2)",
-                    borderLeft: "2px solid var(--c-red)",
+                    borderLeft: "3px solid var(--c-red)",
+                    borderRadius: "0 4px 4px 0",
                   }}
                 >
-                  <div className="font-term" style={{ fontSize: 12, color: "var(--c-orange)", fontWeight: 700, marginBottom: 4 }}>
+                  <div className="font-term" style={{ fontSize: 12, color: "var(--c-orange)", fontWeight: 700, marginBottom: 3 }}>
                     {art.law}
                   </div>
                   <div className="font-term text-dim" style={{ fontSize: 11, marginBottom: 4 }}>
                     {art.title}
                   </div>
-                  <p className="font-term text-dim" style={{ fontSize: 10.5, lineHeight: 1.6, margin: 0, color: "var(--c-gray)" }}>
+                  <p className="font-term text-dim" style={{ fontSize: 10.5, lineHeight: 1.65, margin: 0, color: "var(--c-gray)" }}>
                     {art.text}
                   </p>
                 </div>
               ))}
 
               {/* 警示案例 */}
-              <div className="font-pixel text-orange" style={{ fontSize: 8, marginBottom: 8, marginTop: 12 }}>
+              <div className="font-pixel text-orange" style={{ fontSize: 8, marginBottom: 8, marginTop: 14 }}>
                 ⚖ 相关违法案例（以做警醒）
               </div>
               {CASES.map((c, i) => (
@@ -268,15 +319,16 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                   className="case-card"
                   style={{
                     marginBottom: 8,
-                    padding: "8px 10px",
+                    padding: "8px 12px",
                     background: "var(--c-dark2)",
                     border: "1px solid var(--c-dark3)",
+                    borderRadius: 4,
                   }}
                 >
                   <div className="font-term" style={{ fontSize: 12, color: "var(--c-orange)", fontWeight: 700, marginBottom: 4 }}>
                     {c.title}
                   </div>
-                  <p className="font-term text-dim" style={{ fontSize: 11, lineHeight: 1.6, margin: 0 }}>
+                  <p className="font-term text-dim" style={{ fontSize: 11, lineHeight: 1.65, margin: 0 }}>
                     {c.desc}
                   </p>
                   <div className="font-mono text-dim" style={{ fontSize: 9, marginTop: 4, color: "var(--c-gray)" }}>
@@ -288,13 +340,13 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
               {/* 底部声明 */}
               <div
                 style={{
-                  marginTop: 12,
-                  padding: "8px 10px",
+                  marginTop: 14,
+                  padding: "10px 12px",
                   borderTop: "1px solid var(--c-gray)",
                   textAlign: "center",
                 }}
               >
-                <p className="font-term text-dim" style={{ fontSize: 11, lineHeight: 1.6, margin: 0 }}>
+                <p className="font-term text-dim" style={{ fontSize: 11, lineHeight: 1.7, margin: 0 }}>
                   本人已确认：本工具未含任何破坏性功能，上述功能仅做辅助学习之用。
                   <br />
                   使用者应遵守当地法律法规，因不当使用产生的一切法律后果由使用者本人承担。
@@ -302,11 +354,11 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
               </div>
             </div>
 
-            {/* 底部操作栏 — 倒计时 + 按钮 */}
+            {/* 底部操作栏 — 倒计时 + 按钮（按钮始终可点击） */}
             <div
               style={{
                 borderTop: "2px solid var(--c-red)",
-                padding: "10px 16px",
+                padding: "12px 18px",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
@@ -314,16 +366,16 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                 background: "var(--c-dark2)",
               }}
             >
-              {/* 倒计时圆环 */}
-              <div style={{ position: "relative", width: 44, height: 44, flexShrink: 0 }}>
-                <svg width="44" height="44" viewBox="0 0 44 44" style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx="22" cy="22" r="18" fill="none" stroke="var(--c-dark3)" strokeWidth="3" />
+              {/* 倒计时圆环（纯视觉，不阻止操作） */}
+              <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
+                <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx="20" cy="20" r="16" fill="none" stroke="var(--c-dark3)" strokeWidth="3" />
                   <circle
-                    cx="22" cy="22" r="18" fill="none"
+                    cx="20" cy="20" r="16" fill="none"
                     stroke={countdown > 0 ? "var(--c-red)" : "var(--c-green)"}
                     strokeWidth="3"
-                    strokeDasharray="113"
-                    strokeDashoffset={countdown > 0 ? (113 * countdown) / COUNTDOWN_SECONDS : 0}
+                    strokeDasharray="100"
+                    strokeDashoffset={countdown > 0 ? (100 * countdown) / COUNTDOWN_SECONDS : 0}
                     strokeLinecap="round"
                     style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s" }}
                   />
@@ -336,7 +388,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 10,
+                    fontSize: 9,
                     color: countdown > 0 ? "var(--c-red)" : "var(--c-green)",
                   }}
                 >
@@ -347,31 +399,25 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
               {/* 提示文字 */}
               <div style={{ flex: 1 }}>
                 {countdown > 0 ? (
-                  <span className="font-term" style={{ fontSize: 12, color: "var(--c-red)" }}>
-                    请仔细阅读法律警示，{countdown} 秒后可继续...
-                  </span>
-                ) : !scrollRead ? (
-                  <span className="font-term" style={{ fontSize: 12, color: "var(--c-orange)" }}>
-                    请滚动阅读完整内容后继续...
+                  <span className="font-term" style={{ fontSize: 12, color: "var(--c-dim)" }}>
+                    建议阅读 {countdown}s · 可随时跳过
                   </span>
                 ) : (
                   <span className="font-term" style={{ fontSize: 12, color: "var(--c-green)" }}>
-                    已阅读完毕，可以继续。
+                    已阅读完毕
                   </span>
                 )}
               </div>
 
-              {/* 继续按钮 */}
+              {/* 继续按钮 — 始终可点击 */}
               <button
                 className="btn btn-primary"
                 onClick={handleProceed}
-                disabled={!canProceed}
                 style={{
                   fontSize: 13,
-                  padding: "8px 20px",
-                  opacity: canProceed ? 1 : 0.4,
-                  cursor: canProceed ? "pointer" : "not-allowed",
+                  padding: "8px 24px",
                   whiteSpace: "nowrap",
+                  cursor: "pointer",
                 }}
               >
                 我已知晓 →
@@ -383,7 +429,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
     );
   }
 
-  // ===== Phase 2: 抖音号引导 =====
+  // ===== Phase 2: 抖音号引导（仅首次启动） =====
   return (
     <>
       <style>{WARNING_CSS}</style>
@@ -393,11 +439,12 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
           position: "fixed",
           inset: 0,
           zIndex: 99999,
-          background: "rgba(0,0,0,0.95)",
+          background: "rgba(0,0,0,0.92)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           padding: 16,
+          backdropFilter: "blur(4px)",
         }}
       >
         <div
@@ -406,8 +453,8 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
             maxWidth: 400,
             background: "var(--c-dark)",
             border: "2px solid var(--c-orange)",
-            boxShadow: "0 0 40px rgba(255,123,36,0.2)",
-            padding: 0,
+            borderRadius: 6,
+            boxShadow: "0 0 50px rgba(255,123,36,0.2), 0 8px 32px rgba(0,0,0,0.6)",
             overflow: "hidden",
           }}
         >
@@ -415,7 +462,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
           <div
             style={{
               background: "linear-gradient(135deg, var(--c-orange), #ff4500)",
-              padding: "10px 16px",
+              padding: "12px 16px",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -428,7 +475,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
           </div>
 
           {/* 内容区 */}
-          <div style={{ padding: "20px 16px", textAlign: "center" }}>
+          <div style={{ padding: "22px 18px", textAlign: "center" }}>
             {/* 头像/图标 */}
             <div
               style={{
@@ -441,6 +488,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 0 20px rgba(255,123,36,0.3)",
               }}
             >
               <Icon name="user" size={36} style={{ color: "var(--c-orange)" }} />
@@ -455,13 +503,14 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
             <div
               style={{
                 display: "inline-block",
-                padding: "8px 20px",
+                padding: "8px 24px",
                 background: "var(--c-dark2)",
                 border: "1.5px solid var(--c-orange)",
+                borderRadius: 4,
                 marginBottom: 12,
               }}
             >
-              <span className="font-term" style={{ fontSize: 22, color: "var(--c-orange)", fontWeight: 700, letterSpacing: 2 }}>
+              <span className="font-term" style={{ fontSize: 24, color: "var(--c-orange)", fontWeight: 700, letterSpacing: 2 }}>
                 {DOUYIN_ID}
               </span>
             </div>
@@ -481,11 +530,11 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                 margin: "0 auto 16px",
                 background: "#fff",
                 padding: 8,
+                borderRadius: 4,
                 position: "relative",
                 overflow: "hidden",
               }}
             >
-              {/* 像素风二维码模拟 */}
               <svg width="124" height="124" viewBox="0 0 124 124" style={{ imageRendering: "pixelated" }}>
                 {/* 定位角 */}
                 <rect x="4" y="4" width="28" height="28" fill="#000" />
@@ -535,6 +584,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
                 fontSize: 14,
                 padding: "10px",
                 fontWeight: 700,
+                cursor: "pointer",
               }}
             >
               进入应用 →

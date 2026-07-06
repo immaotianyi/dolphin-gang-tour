@@ -993,7 +993,7 @@ export const App: React.FC = () => {
   useKeyboardShortcuts();
   // 开机动画状态：未完成时只渲染 BootScreen，完成后渲染主界面
   const [booted, setBooted] = useState(false);
-  // 法律警示：每次启动都显示，5秒强制倒计时，结束后显示抖音号
+  // 法律警示：每次启动展示，用户可随时点击继续；首次启动后展示作者抖音号
   const [showLegalWarning, setShowLegalWarning] = useState(true);
   // 首次启动用户协议：未同意时（法律警示完成后）展示，同意后进入主界面
   const [showAgreement, setShowAgreement] = useState(() => {
