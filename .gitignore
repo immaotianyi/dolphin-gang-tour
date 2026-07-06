@@ -1,0 +1,47 @@
+# ==================== 依赖目录 ====================
+node_modules/
+flipper-ai-tutor/node_modules/
+
+# ==================== 构建产物 ====================
+# Rust 编译产物
+flipper-ai-tutor/src-tauri/target/
+flipper-ai-tutor/src-tauri/Cargo.lock
+
+# 前端构建产物
+flipper-ai-tutor/dist/
+
+# Tauri 构建产物
+flipper-ai-tutor/src-tauri/gen/
+
+# ==================== IDE / 编辑器 ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ==================== 环境变量 / 密钥 ====================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ==================== 日志 / 临时文件 ====================
+*.log
+/tmp/
+flipper-ai-tutor/src-tauri/WixTools/
+
+# ==================== 操作系统文件 ====================
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ==================== 大文件 / 媒体 ====================
+*.mp4
+*.mov
+*.avi
+
+# ==================== TRAE 工作目录 ====================
+.trae-html-share-packages/

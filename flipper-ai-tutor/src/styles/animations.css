@@ -1,0 +1,205 @@
+/**
+ * FlipperZero AI Tutor — 动画样式库（追加到全局样式，不覆盖已有规则）
+ * 主题: 80s Retro Cyberpunk / 8-bit Pixel Terminal
+ *
+ * 本文件仅新增 @keyframes 与对应的工具类，所有命名与 globals.css 中
+ * 已有的 blink / bob / pulse-orange 不冲突，可安全叠加使用。
+ * 所有动画遵循 --c-* CSS 变量配色，无 emoji。
+ */
+
+/* ====== 1. 水平扫描线（设备扫描，从上到下移动） ====== */
+@keyframes scan-line {
+  0%   { top: 0%;    opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { top: 100%;  opacity: 0; }
+}
+.anim-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  top: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--c-orange) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px var(--c-orange), 0 0 4px var(--c-orange);
+  animation: scan-line 2.6s linear infinite;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* ====== 2. 雷达扫描旋转（USB 扫描雷达） ====== */
+@keyframes radar-sweep {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.anim-radar {
+  animation: radar-sweep 3s linear infinite;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* ====== 3. 赛博朋克故障效果（标题文字 RGB 抖动） ====== */
+@keyframes glitch {
+  0% {
+    text-shadow: 2px 0 var(--c-red), -2px 0 var(--c-blue);
+    transform: translate(0, 0);
+  }
+  18% {
+    text-shadow: -3px 0 var(--c-red), 3px 0 var(--c-blue);
+    transform: translate(1px, -1px);
+  }
+  36% {
+    text-shadow: 2px 0 var(--c-green), -2px 0 var(--c-orange);
+    transform: translate(-1px, 1px);
+  }
+  54% {
+    text-shadow: -2px 0 var(--c-blue), 2px 0 var(--c-red);
+    transform: translate(0, 0);
+  }
+  72% {
+    text-shadow: 3px 0 var(--c-blue), -3px 0 var(--c-red);
+    transform: translate(-1px, 0);
+  }
+  100% {
+    text-shadow: 2px 0 var(--c-red), -2px 0 var(--c-blue);
+    transform: translate(0, 0);
+  }
+}
+.anim-glitch {
+  animation: glitch 2.4s infinite;
+  will-change: transform, text-shadow;
+}
+
+/* ====== 4. 屏幕闪烁（CRT 开机效果） ====== */
+@keyframes flicker {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.4; }
+  20%  { opacity: 0.1; }
+  30%  { opacity: 0.85; }
+  40%  { opacity: 0.3; }
+  55%  { opacity: 1; }
+  65%  { opacity: 0.5; }
+  78%  { opacity: 1; }
+  88%  { opacity: 0.75; }
+  100% { opacity: 1; }
+}
+.anim-flicker {
+  animation: flicker 0.5s ease-out 1;
+}
+
+/* ====== 5. 数据流瀑布（传输动画背景） ====== */
+@keyframes data-stream {
+  from { background-position: 0 0; }
+  to   { background-position: 0 16px; }
+}
+.anim-data-stream {
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 14px,
+    rgba(0, 255, 65, 0.22) 14px,
+    rgba(0, 255, 65, 0.22) 16px
+  );
+  animation: data-stream 0.7s linear infinite;
+}
+
+/* ====== 6. 打字机光标闪烁 ====== */
+@keyframes typewriter-cursor {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.anim-typewriter {
+  animation: typewriter-cursor 0.8s step-end infinite;
+}
+
+/* ====== 7. 开机进度条（0 -> 100%） ====== */
+@keyframes boot-progress {
+  0%   { width: 0%; }
+  100% { width: 100%; }
+}
+.anim-boot {
+  animation: boot-progress 2s linear forwards;
+}
+
+/* ====== 8. 脉冲圆环扩散（设备检测发现） ====== */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.anim-pulse-ring {
+  animation: pulse-ring 1.5s ease-out infinite;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/* ====== 9. 从右侧滑入（消息出现） ====== */
+@keyframes slide-in-right {
+  0%   { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0);    opacity: 1; }
+}
+.anim-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* ====== 10. 淡入上移（列表项出现） ====== */
+@keyframes fade-in-up {
+  0%   { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 1; }
+}
+.anim-fade-in-up {
+  animation: fade-in-up 0.35s ease-out;
+}
+
+/* ====== 11. 抖动（错误提示） ====== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+.anim-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* ====== 12. 进度条条纹滚动 ======
+ * 仅设置 background-image 与 animation，不触碰 background-color，
+ * 因此可与内联 backgroundColor 叠加（橙色/绿色底 + 白色斜纹）。
+ */
+@keyframes progress-stripes {
+  from { background-position: 0 0; }
+  to   { background-position: 20px 0; }
+}
+.progress-striped {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.3) 0,
+    rgba(255, 255, 255, 0.3) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  animation: progress-stripes 0.5s linear infinite;
+}
+
+/* ====== 无障碍：尊重「减少动态」偏好 ====== */
+@media (prefers-reduced-motion: reduce) {
+  .anim-scan-line,
+  .anim-radar,
+  .anim-glitch,
+  .anim-flicker,
+  .anim-data-stream,
+  .anim-typewriter,
+  .anim-boot,
+  .anim-pulse-ring,
+  .anim-slide-in-right,
+  .anim-fade-in-up,
+  .anim-shake,
+  .progress-striped {
+    animation: none !important;
+  }
+}

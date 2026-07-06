@@ -1,0 +1,80 @@
+[package]
+name = "flipper-ai-tutor"
+version = "1.0.0"
+description = "FlipperZero AI 小白助手"
+authors = ["FlipperAI"]
+edition = "2021"
+
+[lib]
+name = "flipper_ai_tutor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+prost-build = "0.13"
+
+[dependencies]
+# Tauri 2.0 核心与插件
+tauri = { version = "2.0", features = [] }
+tauri-plugin-shell = "2.0"
+tauri-plugin-store = "2.0"
+
+# Protobuf 编解码（Flipper Zero RPC 协议）
+prost = "0.13"
+prost-types = "0.13"
+
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 异步运行时
+tokio = { version = "1.40", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["full"] }
+futures-util = "0.3"
+
+# 串口与 USB 通信
+serialport = "4.5"
+
+# 日志与错误处理
+log = "0.4"
+env_logger = "0.11"
+thiserror = "1.0"
+anyhow = "1.0"
+
+# 并发控制
+parking_lot = "0.12"
+
+# 哈希与校验
+crc32fast = "1.4"
+sha2 = "0.10"
+hex = "0.4"
+
+# HTTP 客户端（AI 模型调用 / 固件下载）
+reqwest = { version = "0.12", features = ["json", "stream", "blocking"] }
+
+# 系统信息（进程检测 / 路径）
+directories = "5.0"
+sysinfo = "0.31"
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }
+
+# 资源打包 / 解压
+tar = "0.4"
+flate2 = "1.0"
+
+# 正则（脱敏 / 日志解析）
+regex = "1.10"
+
+# Base64 编解码（图片传输）
+base64 = "0.22"
+
+# 字节缓冲
+bytes = "1.7"
+
+# 平台特定依赖（条件编译）
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Foundation"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

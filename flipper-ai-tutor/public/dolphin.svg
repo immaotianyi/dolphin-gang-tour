@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#000000"/>
+  <!-- 海豚像素轮廓 -->
+  <path d="M4 18 L7 17 L10 17 L13 16 L17 14 L21 13 L24 13 L27 14 L28 16 L27 17 L24 17 L21 18 L18 19 L15 20 L12 20 L9 19 L6 19 L5 19 Z" fill="none" stroke="#FF7B24" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+  <path d="M24 13 L25 10 L27 11" fill="none" stroke="#FF7B24" stroke-width="1.5" stroke-linecap="square"/>
+  <path d="M27 14 L30 13" fill="none" stroke="#FF7B24" stroke-width="1.5" stroke-linecap="square"/>
+  <rect x="20" y="15" width="1.5" height="1.5" fill="#00FF41"/>
+</svg>
