@@ -182,6 +182,24 @@ body::after {
   50% { transform: translateY(-4px); }
 }
 
+/* 桌宠动画 */
+.pet-float { animation: pet-float 3s ease-in-out infinite; }
+@keyframes pet-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-3px) rotate(1deg); }
+  66% { transform: translateY(-1px) rotate(-1deg); }
+}
+.pet-bounce { animation: pet-bounce 0.6s ease-in-out infinite; }
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.05); }
+}
+.pet-sleep { animation: pet-sleep 4s ease-in-out infinite; }
+@keyframes pet-sleep {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+  50% { transform: scale(0.98) rotate(2deg); opacity: 0.6; }
+}
+
 /* 脉冲动画 */
 .pulse-orange {
   animation: pulse-orange 2s ease-in-out infinite;

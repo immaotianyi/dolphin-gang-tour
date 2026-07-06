@@ -57,7 +57,14 @@ export type IconName =
   | "tv"
   | "antenna"
   | "circuit"
-  | "bug";
+  | "bug"
+  | "heart"
+  | "star"
+  | "info"
+  | "clock"
+  | "user"
+  | "chart"
+  | "fire";
 
 interface IconProps {
   size?: number;
@@ -520,6 +527,56 @@ const Bug: React.FC<IconProps> = ({ size = 24, className }) => (
 
 // ====== 图标映射表 ======
 
+const Heart: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <path d="M12 20 Q4 14 4 9 Q4 5 8 5 Q10 5 12 7 Q14 5 16 5 Q20 5 20 9 Q20 14 12 20 Z" {...stroke} />
+  </svg>
+);
+
+const Star: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <path d="M12 3 L14 9 L20 9 L15 13 L17 19 L12 16 L7 19 L9 13 L4 9 L10 9 Z" {...stroke} />
+  </svg>
+);
+
+const Info: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="12" r="9" {...stroke} />
+    <path d="M12 8 L12 8.5" {...stroke} strokeWidth={2} />
+    <path d="M12 11 L12 16" {...stroke} />
+  </svg>
+);
+
+const Clock: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="12" r="9" {...stroke} />
+    <path d="M12 7 L12 12 L16 14" {...stroke} />
+  </svg>
+);
+
+const User: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="8" r="4" {...stroke} />
+    <path d="M4 21 Q4 14 12 14 Q20 14 20 21" {...stroke} />
+  </svg>
+);
+
+const Chart: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <path d="M3 21 L21 21" {...stroke} />
+    <rect x="5" y="13" width="3" height="6" {...stroke} />
+    <rect x="11" y="9" width="3" height="10" {...stroke} />
+    <rect x="17" y="5" width="3" height="14" {...stroke} />
+  </svg>
+);
+
+const Fire: React.FC<IconProps> = ({ size = 24, className }) => (
+  <svg {...base(size, className)}>
+    <path d="M12 3 Q8 8 8 13 Q8 19 12 21 Q16 19 16 13 Q16 8 12 3 Z" {...stroke} />
+    <path d="M12 10 Q10 13 10 15 Q10 18 12 19 Q14 18 14 15 Q14 13 12 10 Z" {...stroke} strokeWidth={1} opacity={0.6} />
+  </svg>
+);
+
 const ICONS: Record<IconName, React.FC<IconProps>> = {
   dolphin: Dolphin,
   chip: Chip,
@@ -571,6 +628,13 @@ const ICONS: Record<IconName, React.FC<IconProps>> = {
   antenna: Antenna,
   circuit: Circuit,
   bug: Bug,
+  heart: Heart,
+  star: Star,
+  info: Info,
+  clock: Clock,
+  user: User,
+  chart: Chart,
+  fire: Fire,
 };
 
 interface IconComponentProps extends IconProps {

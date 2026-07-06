@@ -253,9 +253,30 @@ export interface IpcEvent<T = unknown> {
 
 // ====== 桌宠相关 ======
 
-export type PetMood = "happy" | "normal" | "sad" | "excited" | "sleeping";
+export type PetMood = "happy" | "normal" | "sad" | "excited" | "sleeping" | "sick";
 
 export type PetAction = "idle" | "eating" | "playing" | "sleeping" | "thinking";
+
+/** 桌宠进化阶段（由等级决定） */
+export type PetEvolutionStage = "egg" | "baby" | "child" | "teen" | "adult";
+
+/** 桌宠活动记录 */
+export interface PetActivity {
+  id: string;
+  action: string;
+  timestamp: number;
+  icon: string;
+}
+
+/** 设备联动事件类型 */
+export type PetEvent =
+  | "device_connected"
+  | "import_success"
+  | "course_completed"
+  | "achievement_unlocked"
+  | "firmware_flashed"
+  | "gpio_used"
+  | "mirror_started";
 
 export interface PetState {
   name: string;
@@ -270,6 +291,22 @@ export interface PetState {
   lastFed: number | null;     // 上次喂食时间戳
   lastPlayed: number | null;  // 上次玩耍时间戳
   birthDate: number;    // 创建时间戳
+  sick: boolean;        // 是否生病
+  totalInteractions: number;  // 总互动次数
+  evolutionStage: PetEvolutionStage; // 进化阶段
+}
+
+// ====== Toast 通知 ======
+
+export type ToastType = "success" | "error" | "info" | "achievement" | "pet";
+
+export interface ToastItem {
+  id: string;
+  type: ToastType;
+  title: string;
+  message?: string;
+  icon?: string;
+  duration: number;
 }
 
 // ====== 成就相关 ======

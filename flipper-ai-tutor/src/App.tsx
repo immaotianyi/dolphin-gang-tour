@@ -21,11 +21,13 @@ import type { IconName } from "@/components/Icon";
 import { BootScreen } from "@/components/BootScreen";
 import { UserAgreement } from "@/components/UserAgreement";
 import { SettingsModal } from "@/components/SettingsModal";
+import { AboutModal } from "@/components/AboutModal";
+import { ToastContainer } from "@/components/ToastContainer";
 import { useImportStore } from "@/stores/importStore";
 import { useUiStore } from "@/stores/uiStore";
 import type { ModalId } from "@/stores/uiStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import type { PetMood } from "@/types";
+import type { PetMood, PetEvolutionStage } from "@/types";
 import { useMirrorStore } from "@/stores/mirrorStore";
 import { usePetStore } from "@/stores/petStore";
 import { useDeviceStore } from "@/stores/deviceStore";
@@ -33,9 +35,12 @@ import { useGpioStore } from "@/stores/gpioStore";
 import { cleanupChatListeners } from "@/stores/chatStore";
 import { cleanupDeviceListeners } from "@/stores/deviceStore";
 import { cleanupFirmwareListeners } from "@/stores/firmwareStore";
+import { useFirmwareStore } from "@/stores/firmwareStore";
 import { cleanupImportListeners } from "@/stores/importStore";
 import { cleanupMirrorListeners } from "@/stores/mirrorStore";
 import { useAchievementStore } from "@/stores/achievementStore";
+import { toast } from "@/stores/toastStore";
+import type { PetEvent } from "@/types";
 
 // -------------------- Error Boundary --------------------
 
@@ -287,75 +292,395 @@ function moodText(mood: PetMood): string {
     sad: "好饿啊...",
     excited: "超开心！",
     sleeping: "Zzz...",
+    sick: "不舒服...",
   };
   return map[mood];
 }
 
+/** 进化阶段名称 */
+const STAGE_LABELS: Record<PetEvolutionStage, string> = {
+  egg: "蛋",
+  baby: "幼豚",
+  child: "少年豚",
+  teen: "青年豚",
+  adult: "成年豚",
+};
+
+/** 动画海豚 SVG — 根据进化阶段和心情显示不同形态 */
+const DolphinSVG: React.FC<{ stage: PetEvolutionStage; mood: PetMood; size?: number }> = ({ stage, mood, size = 80 }) => {
+  const color = mood === "sad" || mood === "sick"
+    ? "var(--c-gray)"
+    : mood === "excited"
+    ? "var(--c-orange)"
+    : mood === "sleeping"
+    ? "var(--c-blue)"
+    : "var(--c-green)";
+
+  const animClass = mood === "sleeping" ? "pet-sleep" : mood === "excited" ? "pet-bounce" : "pet-float";
+
+  // 蛋阶段
+  if (stage === "egg") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 80 80" className={animClass} style={{ shapeRendering: "crispEdges" }}>
+        <ellipse cx="40" cy="45" rx="20" ry="26" fill="none" stroke={color} strokeWidth="2" />
+        <ellipse cx="35" cy="38" rx="6" ry="4" fill="none" stroke={color} strokeWidth="1" opacity="0.5" />
+        <path d="M30 55 Q40 50 50 55" fill="none" stroke={color} strokeWidth="1" opacity="0.5" />
+      </svg>
+    );
+  }
+
+  // 海豚形态（baby/child/teen/adult 差异在大小和细节）
+  const scale = stage === "baby" ? 0.65 : stage === "child" ? 0.8 : stage === "teen" ? 0.9 : 1;
+  const w = size * scale;
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80" className={animClass} style={{ shapeRendering: "crispEdges" }}>
+      {/* 海豚身体 */}
+      <path
+        d={`M${20 * scale + 10} ${40} L${30 * scale + 10} ${35} L${45 * scale + 10} ${33} L${55 * scale + 10} ${36} L${60 * scale + 10} ${42} L${55 * scale + 10} ${46} L${40 * scale + 10} ${48} L${25 * scale + 10} ${46} Z`}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      {/* 背鳍 */}
+      <path d={`M${38 * scale + 10} ${33} L${40 * scale + 10} ${24} L${44 * scale + 10} ${33}`} fill="none" stroke={color} strokeWidth="1.5" />
+      {/* 尾鳍 */}
+      <path d={`M${20 * scale + 10} ${40} L${12 * scale + 10} ${34} M${20 * scale + 10} ${46} L${12 * scale + 10} ${52}`} fill="none" stroke={color} strokeWidth="1.5" />
+      {/* 眼睛 */}
+      <circle cx={48 * scale + 10} cy={38} r="1.5" fill={color} />
+      {/* 嘴巴 — 根据 mood 变化 */}
+      {mood === "happy" || mood === "excited" ? (
+        <path d={`M${55 * scale + 10} ${42} Q${58 * scale + 10} ${44} ${60 * scale + 10} ${42}`} fill="none" stroke={color} strokeWidth="1.5" />
+      ) : mood === "sad" || mood === "sick" ? (
+        <path d={`M${55 * scale + 10} ${44} Q${58 * scale + 10} ${42} ${60 * scale + 10} ${44}`} fill="none" stroke={color} strokeWidth="1.5" />
+      ) : mood === "sleeping" ? (
+        <text x={56 * scale + 8} y={40} fontSize="8" fill={color} fontFamily="monospace">z</text>
+      ) : (
+        <path d={`M${55 * scale + 10} ${43} L${60 * scale + 10} ${43}`} fill="none" stroke={color} strokeWidth="1.5" />
+      )}
+      {/* 成年豚戴皇冠 */}
+      {stage === "adult" && (
+        <path d={`M${38 * scale + 10} ${22} L${36 * scale + 10} ${16} L${40 * scale + 10} ${18} L${44 * scale + 10} ${16} L${42 * scale + 10} ${22}`} fill="none" stroke="var(--c-orange)" strokeWidth="1.5" />
+      )}
+    </svg>
+  );
+};
+
 /** 状态进度条（像素风） */
-const StatBar: React.FC<{ label: string; value: number; color: string }> = ({ label, value, color }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-    <span className="font-term text-dim" style={{ fontSize: 12, width: 30 }}>{label}</span>
+const StatBar: React.FC<{ label: string; value: number; color: string; icon?: IconName }> = ({ label, value, color, icon }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    {icon && <Icon name={icon} size={12} style={{ color }} />}
+    <span className="font-term text-dim" style={{ fontSize: 12, width: 28 }}>{label}</span>
     <div style={{ flex: 1, height: 8, background: "var(--c-dark2)", borderRadius: 4, overflow: "hidden" }}>
       <div style={{ width: `${Math.min(100, Math.max(0, value))}%`, height: "100%", background: color, transition: "width 0.3s" }} />
     </div>
-    <span className="font-term text-dim" style={{ fontSize: 12, width: 30, textAlign: "right" }}>{Math.round(value)}</span>
+    <span className="font-term text-dim" style={{ fontSize: 11, width: 28, textAlign: "right" }}>{Math.round(value)}</span>
   </div>
 );
 
-/** 桌宠 */
+/** 活动日志条目 */
+const ActivityItem: React.FC<{ activity: { id: string; action: string; timestamp: number; icon: string } }> = ({ activity }) => {
+  const timeStr = new Date(activity.timestamp).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", borderBottom: "1px solid var(--c-dark2)" }}>
+      <Icon name={activity.icon as IconName} size={12} style={{ color: "var(--c-dim)", flexShrink: 0 }} />
+      <span className="font-term text-dim" style={{ fontSize: 12, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {activity.action}
+      </span>
+      <span className="font-mono text-dim" style={{ fontSize: 10, flexShrink: 0 }}>{timeStr}</span>
+    </div>
+  );
+};
+
+/** 桌宠（增强版 — 进化系统 + 对话气泡 + 活动日志 + 冷却 + 治病） */
 const PetModalContent: React.FC = () => {
-  const { pet, feed, play, sleep, rename } = usePetStore();
+  const { pet, activities, dialogue, feed, play, sleep, rename, pat, heal, getCooldown } = usePetStore();
+  const feedCd = getCooldown("feed");
+  const playCd = getCooldown("play");
 
   return (
-    <div style={{ textAlign: "center", padding: 10 }}>
-      {/* 桌宠展示区 — 根据 mood 显示不同颜色和浮动动画 */}
-      <div className="bob" style={{ display: "inline-block", marginBottom: 8 }}>
-        <Icon name="pet" size={64} style={{
-          color: pet.mood === "sad" ? "var(--c-gray)"
-               : pet.mood === "excited" ? "var(--c-orange)"
-               : pet.mood === "sleeping" ? "var(--c-blue)"
-               : "var(--c-green)"
-        }} />
+    <div style={{ padding: 4 }}>
+      {/* 桌宠展示区 — 对话气泡 + 动画 SVG */}
+      <div style={{ textAlign: "center", position: "relative", marginBottom: 8 }}>
+        {/* 对话气泡 */}
+        {dialogue && (
+          <div
+            style={{
+              display: "inline-block",
+              background: "var(--c-dark2)",
+              border: "1.5px solid var(--c-green)",
+              padding: "4px 10px",
+              borderRadius: 8,
+              marginBottom: 6,
+              fontSize: 13,
+              color: "var(--c-green)",
+              fontFamily: "var(--font-term)",
+              position: "relative",
+              animation: "toast-slide-in 0.2s ease-out",
+            }}
+          >
+            {dialogue}
+          </div>
+        )}
+        {/* 海豚 SVG */}
+        <div className="pet-container" style={{ display: "inline-block" }}>
+          <DolphinSVG stage={pet.evolutionStage} mood={pet.mood} size={80} />
+        </div>
       </div>
 
-      {/* 名字 + 等级 */}
-      <div className="font-pixel text-orange" style={{ fontSize: 10 }}>
-        {pet.name} Lv.{pet.level}
+      {/* 名字 + 等级 + 进化阶段 */}
+      <div style={{ textAlign: "center", marginBottom: 6 }}>
+        <span className="font-pixel text-orange" style={{ fontSize: 10 }}>
+          {pet.name}
+        </span>
+        <span className="font-term text-dim" style={{ fontSize: 12, marginLeft: 8 }}>
+          Lv.{pet.level} | {STAGE_LABELS[pet.evolutionStage]}
+        </span>
       </div>
 
       {/* 心情显示 */}
-      <div className="font-term text-dim" style={{ fontSize: 14, marginTop: 4 }}>
+      <div className="font-term text-dim" style={{ fontSize: 13, textAlign: "center", marginBottom: 8 }}>
         {moodText(pet.mood)}
       </div>
 
       {/* 状态条 */}
-      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-        <StatBar label="饱食" value={100 - pet.hunger} color="var(--c-green)" />
-        <StatBar label="快乐" value={pet.happiness} color="var(--c-orange)" />
-        <StatBar label="精力" value={pet.energy} color="var(--c-blue)" />
-        <StatBar label="经验" value={Math.floor(pet.exp / pet.expToNext * 100)} color="var(--c-purple)" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
+        <StatBar label="饱食" value={100 - pet.hunger} color="var(--c-green)" icon="sandwich" />
+        <StatBar label="快乐" value={pet.happiness} color="var(--c-orange)" icon="heart" />
+        <StatBar label="精力" value={pet.energy} color="var(--c-blue)" icon="battery" />
+        <StatBar label="经验" value={Math.floor((pet.exp / pet.expToNext) * 100)} color="var(--c-purple)" icon="star" />
       </div>
 
+      {/* 生病提示 + 治病按钮 */}
+      {pet.sick && (
+        <div
+          style={{
+            background: "rgba(255,51,51,0.12)",
+            border: "1px solid var(--c-red)",
+            padding: "6px 8px",
+            marginBottom: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <Icon name="warning" size={14} style={{ color: "var(--c-red)" }} />
+          <span className="font-term" style={{ color: "var(--c-red)", fontSize: 12, flex: 1 }}>
+            {pet.name} 生病了！饥饿值过高...
+          </span>
+          <button className="btn btn-primary" style={{ fontSize: 11, padding: "2px 8px" }} onClick={heal}>
+            治病
+          </button>
+        </div>
+      )}
+
       {/* 操作按钮 */}
-      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-        <button className="btn btn-primary" onClick={feed} disabled={pet.hunger < 10}>
-          喂食
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
+        <button className="btn btn-primary" onClick={feed} disabled={pet.hunger < 5 || feedCd > 0} style={{ fontSize: 12, opacity: feedCd > 0 ? 0.5 : 1 }}>
+          {feedCd > 0 ? `喂食 (${feedCd}s)` : "喂食"}
         </button>
-        <button className="btn btn-primary" onClick={play} disabled={pet.energy < 15}>
-          玩耍
+        <button className="btn btn-primary" onClick={play} disabled={pet.energy < 15 || playCd > 0} style={{ fontSize: 12, opacity: playCd > 0 ? 0.5 : 1 }}>
+          {playCd > 0 ? `玩耍 (${playCd}s)` : "玩耍"}
         </button>
-        <button className="btn" onClick={sleep}>
+        <button className="btn" onClick={sleep} style={{ fontSize: 12 }}>
           {pet.action === "sleeping" ? "起床" : "睡觉"}
         </button>
-        <button className="btn" onClick={() => {
-          const name = prompt("给桌宠起个名字：");
-          if (name && name.trim()) rename(name);
-        }}>
+        <button className="btn" onClick={pat} style={{ fontSize: 12 }}>
+          抚摸
+        </button>
+        <button
+          className="btn"
+          style={{ fontSize: 12, gridColumn: "span 2" }}
+          onClick={() => {
+            const name = prompt("给桌宠起个名字：", pet.name);
+            if (name && name.trim()) rename(name);
+          }}
+        >
           改名
         </button>
       </div>
+
+      {/* 活动日志 */}
+      <div style={{ borderTop: "1px solid var(--c-gray)", paddingTop: 8 }}>
+        <div className="font-pixel text-orange" style={{ fontSize: 8, marginBottom: 4 }}>
+          ACTIVITY LOG
+        </div>
+        {activities.length === 0 ? (
+          <div className="font-term text-dim" style={{ fontSize: 12, textAlign: "center", padding: 8 }}>
+            还没有活动记录...
+          </div>
+        ) : (
+          <div style={{ maxHeight: 120, overflowY: "auto" }}>
+            {activities.slice(0, 8).map((a) => (
+              <ActivityItem key={a.id} activity={a} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 统计信息 */}
+      <div className="font-term text-dim" style={{ fontSize: 11, textAlign: "center", marginTop: 6 }}>
+        总互动 {pet.totalInteractions} 次 | 诞生日 {new Date(pet.birthDate).toLocaleDateString("zh-CN")}
+      </div>
     </div>
   );
+};
+
+/** 学习仪表盘 — 统计学习进度、成就、桌宠、活动数据 */
+const DashboardModalContent: React.FC = () => {
+  const { achievements, unlockedCount, totalCount } = useAchievementStore();
+  const { pet } = usePetStore();
+  const { stepProgress } = useUiStore();
+
+  // 课程完成率
+  const totalSteps = 7 * 5; // 7 门课程，平均 5 步
+  const completedSteps = Object.values(stepProgress).reduce((sum, steps) => sum + steps.length, 0);
+  const coursePercent = Math.round((completedSteps / totalSteps) * 100);
+
+  // 成就
+  const achUnlocked = unlockedCount();
+  const achTotal = totalCount();
+  const achPercent = achTotal > 0 ? Math.round((achUnlocked / achTotal) * 100) : 0;
+
+  // 桌宠等级
+  const petLevel = pet.level;
+  const petStage = STAGE_LABELS[pet.evolutionStage];
+
+  // 统计卡片
+  const stats = [
+    { icon: "book" as IconName, label: "课程进度", value: `${coursePercent}%`, detail: `${completedSteps}/${totalSteps} 步`, color: "var(--c-orange)" },
+    { icon: "trophy" as IconName, label: "成就解锁", value: `${achUnlocked}/${achTotal}`, detail: `${achPercent}%`, color: "var(--c-green)" },
+    { icon: "pet" as IconName, label: "桌宠等级", value: `Lv.${petLevel}`, detail: petStage, color: "var(--c-blue)" },
+    { icon: "heart" as IconName, label: "总互动", value: `${pet.totalInteractions}`, detail: "次", color: "var(--c-red)" },
+  ];
+
+  return (
+    <div>
+      <div className="font-pixel text-orange" style={{ fontSize: 10, marginBottom: 10 }}>
+        LEARNING DASHBOARD
+      </div>
+
+      {/* 统计卡片网格 */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+        {stats.map((s) => (
+          <div key={s.label} className="fw-card" style={{ padding: "10px 12px", textAlign: "center" }}>
+            <Icon name={s.icon} size={20} style={{ color: s.color, marginBottom: 4 }} />
+            <div className="font-pixel text-orange" style={{ fontSize: 8, marginBottom: 2 }}>
+              {s.label}
+            </div>
+            <div className="font-term" style={{ fontSize: 18, color: s.color, fontWeight: 700 }}>
+              {s.value}
+            </div>
+            <div className="font-term text-dim" style={{ fontSize: 11 }}>
+              {s.detail}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 课程进度详情 */}
+      <div className="fw-card" style={{ padding: "10px 12px", marginBottom: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <span className="font-pixel text-orange" style={{ fontSize: 8 }}>课程完成度</span>
+          <span className="font-term" style={{ fontSize: 13 }}>{coursePercent}%</span>
+        </div>
+        <div style={{ height: 6, background: "var(--c-dark2)", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: `${coursePercent}%`, height: "100%", background: "var(--c-orange)", transition: "width 0.5s" }} />
+        </div>
+      </div>
+
+      {/* 成就进度详情 */}
+      <div className="fw-card" style={{ padding: "10px 12px", marginBottom: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <span className="font-pixel text-orange" style={{ fontSize: 8 }}>成就收集</span>
+          <span className="font-term" style={{ fontSize: 13 }}>{achUnlocked}/{achTotal}</span>
+        </div>
+        <div style={{ height: 6, background: "var(--c-dark2)", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: `${achPercent}%`, height: "100%", background: "var(--c-green)", transition: "width 0.5s" }} />
+        </div>
+      </div>
+
+      {/* 桌宠状态详情 */}
+      <div className="fw-card" style={{ padding: "10px 12px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <span className="font-pixel text-orange" style={{ fontSize: 8 }}>桌宠状态</span>
+          <span className="font-term" style={{ fontSize: 13 }}>{pet.name} Lv.{pet.level}</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+          <StatBar label="饱食" value={100 - pet.hunger} color="var(--c-green)" />
+          <StatBar label="快乐" value={pet.happiness} color="var(--c-orange)" />
+          <StatBar label="精力" value={pet.energy} color="var(--c-blue)" />
+          <StatBar label="经验" value={Math.floor((pet.exp / pet.expToNext) * 100)} color="var(--c-purple)" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/** 设备联动 — 监听各 store 状态变化，通知桌宠 */
+const PetEventLinkage: React.FC = () => {
+  const { connectionState } = useDeviceStore();
+  const { progress: importProgress } = useImportStore();
+  const { flashProgress } = useFirmwareStore();
+  const { isMirroring } = useMirrorStore();
+  const { notifyEvent } = usePetStore();
+  const { achievements } = useAchievementStore();
+
+  // 设备连接成功
+  const prevConn = useRef(connectionState);
+  useEffect(() => {
+    if (prevConn.current !== "connected" && connectionState === "connected") {
+      notifyEvent("device_connected");
+    }
+    prevConn.current = connectionState;
+  }, [connectionState, notifyEvent]);
+
+  // 导入完成
+  const prevImport = useRef(importProgress.phase);
+  useEffect(() => {
+    if (prevImport.current !== "done" && importProgress.phase === "done") {
+      notifyEvent("import_success");
+      toast.success("资源导入完成！");
+    }
+    prevImport.current = importProgress.phase;
+  }, [importProgress.phase, notifyEvent]);
+
+  // 固件刷写完成
+  const prevFlash = useRef(flashProgress?.phase ?? "idle");
+  useEffect(() => {
+    const currentPhase = flashProgress?.phase ?? "idle";
+    if (prevFlash.current !== "done" && currentPhase === "done") {
+      notifyEvent("firmware_flashed");
+      toast.success("固件刷写成功！");
+    }
+    prevFlash.current = currentPhase;
+  }, [flashProgress, notifyEvent]);
+
+  // 镜像启动
+  const prevMirror = useRef(isMirroring);
+  useEffect(() => {
+    if (!prevMirror.current && isMirroring) {
+      notifyEvent("mirror_started");
+    }
+    prevMirror.current = isMirroring;
+  }, [isMirroring, notifyEvent]);
+
+  // 成就解锁
+  const prevAchCount = useRef(achievements.filter(a => a.unlocked).length);
+  useEffect(() => {
+    const currentCount = achievements.filter(a => a.unlocked).length;
+    if (currentCount > prevAchCount.current) {
+      const newAch = achievements.find(a => a.unlocked && a.unlockedAt && Date.now() - a.unlockedAt * 1000 < 5000);
+      if (newAch) {
+        notifyEvent("achievement_unlocked");
+        toast.achievement(`成就解锁: ${newAch.name}`, newAch.description);
+      }
+    }
+    prevAchCount.current = currentCount;
+  }, [achievements, notifyEvent]);
+
+  return null;
 };
 
 /** GPIO 沙盘 */
@@ -641,6 +966,8 @@ const ToolModals: React.FC<{
     { id: "resource", title: "RESOURCE MANAGER", node: <ResourceModalContent />, width: 560 },
     { id: "settings", title: "AI SETTINGS", node: <SettingsModal />, width: 520 },
     { id: "help", title: "KEYBOARD SHORTCUTS", node: <HelpModalContent />, width: 480 },
+    { id: "about", title: "ABOUT", node: <AboutModal />, width: 480 },
+    { id: "dashboard", title: "DASHBOARD", node: <DashboardModalContent />, width: 480 },
   ];
   return (
     <>
@@ -711,6 +1038,8 @@ export const App: React.FC = () => {
           </main>
         </div>
         <ToolModals openModal={openModal} setModal={setModal} />
+        <ToastContainer />
+        <PetEventLinkage />
       </div>
     </ErrorBoundary>
   );

@@ -13,7 +13,7 @@ export type ViewId =
   | "course";
 
 /** 弹窗类型（mirror/trophy/pet/circuit 等工具走 Modal） */
-export type ModalId = "mirror" | "trophy" | "pet" | "circuit" | "resource" | "settings" | "help" | null;
+export type ModalId = "mirror" | "trophy" | "pet" | "circuit" | "resource" | "settings" | "help" | "about" | "dashboard" | null;
 
 interface UiState {
   activeView: ViewId;

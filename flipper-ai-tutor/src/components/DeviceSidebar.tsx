@@ -87,11 +87,13 @@ export const DeviceSidebar: React.FC = () => {
   ];
 
   // 工具菜单定义
-  const tools: { icon: IconName; label: string; modal: "mirror" | "trophy" | "pet" | "circuit" }[] = [
+  const tools: { icon: IconName; label: string; modal: "mirror" | "trophy" | "pet" | "circuit" | "dashboard" | "about" | "settings" | "help" }[] = [
     { icon: "mirror", label: "屏幕镜像", modal: "mirror" },
     { icon: "trophy", label: "成就图鉴", modal: "trophy" },
     { icon: "pet", label: "桌宠", modal: "pet" },
     { icon: "circuit", label: "GPIO 沙盘", modal: "circuit" },
+    { icon: "chart", label: "仪表盘", modal: "dashboard" },
+    { icon: "info", label: "关于", modal: "about" },
   ];
 
   // 折叠态：渲染窄条（仅设备图标 + 展开提示），点击展开
