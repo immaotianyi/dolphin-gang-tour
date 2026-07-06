@@ -118,7 +118,9 @@ fn install_driver_windows(force: bool) -> Result<DriverInstallResult> {
     }
 
     // 2. 查询当前驱动
-    let previous = query_current_driver_windows(&dfu_device.unwrap().port_name)?;
+    let dfu_dev = dfu_device.as_ref()
+        .ok_or_else(|| anyhow!("DFU 设备不可用"))?;
+    let previous = query_current_driver_windows(&dfu_dev.port_name)?;
 
     // 3. 判断是否已是 libusb/WinUSB 驱动
     let already_libusb = previous
@@ -140,7 +142,7 @@ fn install_driver_windows(force: bool) -> Result<DriverInstallResult> {
 
     // 4. 调用 Zadig 替换驱动
     log::info!("准备调用 Zadig 替换驱动（previous={}）", previous);
-    let installed = run_zadig_windows(&dfu_device.unwrap().port_name)?;
+    let installed = run_zadig_windows(&dfu_dev.port_name)?;
 
     Ok(DriverInstallResult {
         needed: true,

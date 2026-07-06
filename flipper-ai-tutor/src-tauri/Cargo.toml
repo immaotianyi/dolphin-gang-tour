@@ -17,7 +17,7 @@ prost-build = "0.13"
 # Tauri 2.0 核心与插件
 tauri = { version = "2.0", features = [] }
 tauri-plugin-shell = "2.0"
-tauri-plugin-store = "2.0"
+tauri-plugin-dialog = "2.0"
 
 # Protobuf 编解码（Flipper Zero RPC 协议）
 prost = "0.13"

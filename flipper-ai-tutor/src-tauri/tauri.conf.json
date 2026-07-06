@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "FlipperZero AI Tutor",
         "width": 1280,
         "height": 800,
@@ -23,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: blob: https://*; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.flipperzero.one https://localhost:* http://localhost:*"
     }
   },
   "bundle": {
@@ -35,7 +36,11 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "FlipperAI",
+    "category": "Utility",
+    "shortDescription": "Flipper Zero 全功能桌面伴侣应用",
+    "longDescription": "Flipper Zero 资源管理、固件刷写、AI 辅导、虚拟设备模拟一站式工具"
   },
   "plugins": {}
 }

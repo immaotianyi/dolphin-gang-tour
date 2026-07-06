@@ -462,17 +462,31 @@ async fn flash_firmware(
 ) -> Result<IpcResult<firmware::FlashResult>, String> {
     log::info!("IPC: flash_firmware id={} path={:?}", firmware_id, firmware_path);
     push_log(&state, format!("开始刷写固件: {}", firmware_id));
+
+    // 重置取消标志
+    state.cancel_flash_flag.store(false, std::sync::atomic::Ordering::SeqCst);
+
     let session_opt = state.rpc_session.lock().clone();
+    let cancel_flag = state.cancel_flash_flag.clone();
+
     match firmware::flasher::flash_firmware(
         &firmware_id,
         firmware_path.as_deref(),
         session_opt.as_ref(),
         |progress| {
+            // 检查取消标志
+            if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+                return;
+            }
             // 推送刷写进度事件（前端订阅 flash-progress）
             let _ = app.emit("flash-progress", &progress);
         },
     ) {
         Ok(r) => {
+            if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+                push_log(&state, "固件刷写已取消".to_string());
+                return Ok(IpcResult::err("固件刷写已取消"));
+            }
             push_log(&state, format!("固件刷写完成: {:?}", r));
             Ok(IpcResult::ok(r))
         }
@@ -1114,7 +1128,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::new())
         .setup(|_app| {
             log::info!("Tauri 应用初始化完成");

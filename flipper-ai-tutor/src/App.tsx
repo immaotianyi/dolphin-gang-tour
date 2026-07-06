@@ -7,7 +7,7 @@
  * - 工具类入口(mirror/trophy/pet/circuit/resource)走 Modal
  * - 整体黑色背景 + CRT 扫描线（由 body::before 实现）
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, Component, ReactNode } from "react";
 import { TitleBar } from "@/components/TitleBar";
 import { DeviceSidebar } from "@/components/DeviceSidebar";
 import { AiChat } from "@/components/AiChat";
@@ -25,6 +25,51 @@ import { useUiStore } from "@/stores/uiStore";
 import type { ModalId } from "@/stores/uiStore";
 import { useMirrorStore } from "@/stores/mirrorStore";
 import { useDeviceStore } from "@/stores/deviceStore";
+import { cleanupChatListeners } from "@/stores/chatStore";
+import { cleanupDeviceListeners } from "@/stores/deviceStore";
+import { cleanupFirmwareListeners } from "@/stores/firmwareStore";
+import { cleanupImportListeners } from "@/stores/importStore";
+import { cleanupMirrorListeners } from "@/stores/mirrorStore";
+
+// -------------------- Error Boundary --------------------
+
+/**
+ * 全局错误边界 — 捕获子组件 render 阶段的未处理错误，防止白屏崩溃
+ */
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("App ErrorBoundary caught:", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, textAlign: "center", color: "#ff7b24", fontFamily: "monospace" }}>
+          <div style={{ fontSize: 14, marginBottom: 12 }}>APPLICATION ERROR</div>
+          <div style={{ fontSize: 13, color: "#888", marginBottom: 20 }}>
+            {this.state.error?.message || "未知错误"}
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            重试
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /**
  * 应用启动时尝试自动扫描一次设备。
@@ -307,27 +352,44 @@ export const App: React.FC = () => {
   // 开机动画状态：未完成时只渲染 BootScreen，完成后渲染主界面
   const [booted, setBooted] = useState(false);
 
+  // 组件卸载时清理所有 Tauri 事件监听器，防止内存泄漏
+  useEffect(() => {
+    return () => {
+      cleanupChatListeners();
+      cleanupDeviceListeners();
+      cleanupFirmwareListeners();
+      cleanupImportListeners();
+      cleanupMirrorListeners();
+    };
+  }, []);
+
   // 开机动画未完成：仅渲染 BootScreen，主界面（含 AutoScanOnBoot）尚未挂载
   if (!booted) {
-    return <BootScreen onComplete={() => setBooted(true)} />;
+    return (
+      <ErrorBoundary>
+        <BootScreen onComplete={() => setBooted(true)} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <div className="app-shell">
-      <AutoScanOnBoot />
-      <TitleBar />
-      <div className="app-body">
-        <DeviceSidebar />
-        <main className="app-main">
-          {activeView === "ai" && <AiChat />}
-          {activeView === "import" && <ImportWizard />}
-          {activeView === "firmware" && <FirmwareManager />}
-          {activeView === "diagnostic" && <DiagnosticPanel />}
-          {activeView === "course" && <CourseView />}
-        </main>
+    <ErrorBoundary>
+      <div className="app-shell">
+        <AutoScanOnBoot />
+        <TitleBar />
+        <div className="app-body">
+          <DeviceSidebar />
+          <main className="app-main">
+            {activeView === "ai" && <AiChat />}
+            {activeView === "import" && <ImportWizard />}
+            {activeView === "firmware" && <FirmwareManager />}
+            {activeView === "diagnostic" && <DiagnosticPanel />}
+            {activeView === "course" && <CourseView />}
+          </main>
+        </div>
+        <ToolModals openModal={openModal} setModal={setModal} />
       </div>
-      <ToolModals openModal={openModal} setModal={setModal} />
-    </div>
+    </ErrorBoundary>
   );
 };
 

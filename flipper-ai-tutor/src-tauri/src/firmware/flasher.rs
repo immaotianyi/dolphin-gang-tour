@@ -907,7 +907,8 @@ where
 
     // 实时读取 stderr 解析进度
     use std::io::{BufRead, BufReader};
-    let stderr = child.stderr.take().unwrap();
+    let stderr = child.stderr.take()
+        .ok_or_else(|| anyhow!("无法获取 dfu-util stderr"))?;
     let reader = BufReader::new(stderr);
 
     for line_result in reader.lines() {
@@ -1093,6 +1094,7 @@ fn verify_dfu_manifest(archive_path: &str) -> Result<Option<u32>> {
         let decoder = flate2::read::GzDecoder::new(file);
         let mut archive = tar::Archive::new(decoder);
 
+        let mut found: Option<Vec<u8>> = None;
         for entry_result in archive.entries()? {
             let mut entry = entry_result?;
             let entry_path = entry.path()?.to_path_buf();
@@ -1104,10 +1106,11 @@ fn verify_dfu_manifest(archive_path: &str) -> Result<Option<u32>> {
                 let mut buf = Vec::new();
                 use std::io::Read;
                 entry.read_to_end(&mut buf)?;
+                found = Some(buf);
                 break;
             }
         }
-        None
+        found
     } else if is_zip {
         // zip 解压查找 manifest.json
         let output = std::process::Command::new("unzip")
