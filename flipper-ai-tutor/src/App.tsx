@@ -20,6 +20,7 @@ import { Icon } from "@/components/Icon";
 import type { IconName } from "@/components/Icon";
 import { BootScreen } from "@/components/BootScreen";
 import { UserAgreement } from "@/components/UserAgreement";
+import { LegalWarning } from "@/components/LegalWarning";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AboutModal } from "@/components/AboutModal";
 import { ToastContainer } from "@/components/ToastContainer";
@@ -992,7 +993,9 @@ export const App: React.FC = () => {
   useKeyboardShortcuts();
   // 开机动画状态：未完成时只渲染 BootScreen，完成后渲染主界面
   const [booted, setBooted] = useState(false);
-  // 首次启动用户协议：未同意时（BootScreen 完成后）展示，同意后进入主界面
+  // 法律警示：每次启动都显示，5秒强制倒计时，结束后显示抖音号
+  const [showLegalWarning, setShowLegalWarning] = useState(true);
+  // 首次启动用户协议：未同意时（法律警示完成后）展示，同意后进入主界面
   const [showAgreement, setShowAgreement] = useState(() => {
     return !localStorage.getItem("dolphintutor-agreed");
   });
@@ -1017,7 +1020,16 @@ export const App: React.FC = () => {
     );
   }
 
-  // 首次启动展示用户协议（BootScreen 完成后、主界面显示前）
+  // 法律警示：每次启动强制展示，5秒倒计时 + 法律条文 + 抖音号引导
+  if (showLegalWarning) {
+    return (
+      <ErrorBoundary>
+        <LegalWarning onComplete={() => setShowLegalWarning(false)} />
+      </ErrorBoundary>
+    );
+  }
+
+  // 首次启动展示用户协议（法律警示完成后、主界面显示前）
   if (showAgreement) {
     return <UserAgreement onAgree={() => setShowAgreement(false)} />;
   }

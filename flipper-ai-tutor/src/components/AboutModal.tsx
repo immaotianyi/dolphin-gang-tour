@@ -72,9 +72,12 @@ export const AboutModal: React.FC = () => {
             <div className="font-term text-dim" style={{ fontSize: 12 }}>
               Developer & Designer
             </div>
+            <div className="font-term" style={{ fontSize: 12, color: "var(--c-orange)", marginTop: 2 }}>
+              抖音号: Ciao778899
+            </div>
           </div>
           <a
-            href="https://github.com/immaotianyi"
+            href="https://www.douyin.com/"
             target="_blank"
             rel="noopener noreferrer"
             className="about-link font-term"
