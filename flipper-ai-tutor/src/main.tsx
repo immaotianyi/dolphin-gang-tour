@@ -6,6 +6,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "@/App";
 import "@/styles/globals.css";
+// 提前加载主题 store：在渲染前读取 localStorage 并设置 data-theme，
+// 避免首屏闪烁，同时保证 SettingsModal 未挂载时主题仍生效。
+import "@/stores/themeStore";
 
 const rootEl = document.getElementById("root");
 if (!rootEl) {

@@ -246,6 +246,12 @@ export const FirmwareManager: React.FC = () => {
                 <div className="font-term text-dim" style={{ fontSize: 15 }}>
                   {fw.description}
                 </div>
+                {/* 第三方固件风险提示（非 OFW 官方固件） */}
+                {fw.id !== "ofw" && (
+                  <span style={{ fontSize: 10, color: "#ff4444", display: "block", marginTop: 2 }}>
+                    ⚠ 第三方固件可能解除频段锁定，刷写后使用需遵守当地法律
+                  </span>
+                )}
               </div>
             );
           })}

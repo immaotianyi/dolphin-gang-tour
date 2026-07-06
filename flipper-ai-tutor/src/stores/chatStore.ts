@@ -62,8 +62,6 @@ interface ChatStore {
   setModelConfig: (config: AiModelConfig) => void;
   /** 停止流式生成 */
   stopStreaming: () => Promise<void>;
-  /** 初始化事件监听，返回取消监听函数 */
-  initListeners: () => Promise<() => void>;
 
   // ---- Actions（组件兼容别名） ----
   /** sendMessage 别名（fire-and-forget） */
@@ -93,7 +91,7 @@ const WELCOME_MESSAGE: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "你好！我是 Flipper Zero AI 助手。你可以问我任何关于 Flipper Zero 的问题，比如如何复制门禁卡、使用红外遥控、捕捉无线信号等。也可以选择一门课程，我会手把手教你操作！",
+    "你好！我是 DolphinTutor AI 助手。你可以问我任何关于 Flipper Zero 的问题，比如如何复制门禁卡、使用红外遥控、捕捉无线信号等。也可以选择一门课程，我会手把手教你操作！",
   timestamp: Date.now(),
 };
 
@@ -338,30 +336,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   initListeners: async () => {
-    const unlisten = await onAiChatStream((chunk: AiChatStreamChunk) => {
-      const { messages } = get();
-
-      // 找到对应的 assistant 消息并追加内容
-      const updatedMessages = messages.map((msg) => {
-        if (msg.id === chunk.messageId) {
-          return {
-            ...msg,
-            content: msg.content + chunk.delta,
-            isStreaming: !chunk.done,
-            tokensUsed: chunk.tokensUsed ?? msg.tokensUsed,
-          };
-        }
-        return msg;
-      });
-
-      set({
-        messages: updatedMessages,
-        isStreaming: !chunk.done,
-        isThinking: !chunk.done,
-        ctxUsed: estimateTokens(updatedMessages),
-      });
-    });
-    return unlisten;
+    // 已由模块级自动注册监听，此方法保留为空操作以兼容旧调用
+    return () => {};
   },
 
   // ---- Actions（组件兼容别名） ----

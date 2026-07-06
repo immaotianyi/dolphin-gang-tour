@@ -65,7 +65,7 @@ const ScreenPreview: React.FC<{ connected: boolean }> = ({ connected }) => {
 
 export const DeviceSidebar: React.FC = () => {
   const { connectionState, deviceInfo, scan } = useDeviceStore();
-  const { activeView, activeCourseId, openModal, setView, openCourse, setModal } =
+  const { activeView, activeCourseId, openModal, setView, openCourse, setModal, sidebarCollapsed, toggleSidebar } =
     useUiStore();
 
   const connected =
@@ -93,6 +93,57 @@ export const DeviceSidebar: React.FC = () => {
     { icon: "pet", label: "桌宠", modal: "pet" },
     { icon: "circuit", label: "GPIO 沙盘", modal: "circuit" },
   ];
+
+  // 折叠态：渲染窄条（仅设备图标 + 展开提示），点击展开
+  if (sidebarCollapsed) {
+    return (
+      <aside
+        onClick={toggleSidebar}
+        title="点击展开侧栏 (Ctrl/Cmd+B)"
+        style={{
+          width: 48,
+          flexShrink: 0,
+          background: "var(--c-dark)",
+          borderRight: "2px solid var(--c-orange)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "10px 0",
+          gap: 12,
+          cursor: "pointer",
+        }}
+      >
+        <span className={connected ? "bob" : ""} style={{ color: "var(--c-orange)" }}>
+          <Icon name="dolphin" size={26} />
+        </span>
+        <span
+          className={
+            connected
+              ? "led green"
+              : connecting
+                ? "led orange blink"
+                : "led red"
+          }
+        />
+        {/* 纵向 EXPAND 提示 */}
+        <span
+          className="font-pixel blink"
+          style={{
+            fontSize: 7,
+            color: "var(--c-orange)",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+            marginTop: "auto",
+            marginBottom: 12,
+            letterSpacing: 2,
+          }}
+        >
+          EXPAND
+        </span>
+        <Icon name="chevron-right" size={14} style={{ color: "var(--c-gray)" }} />
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -138,6 +189,26 @@ export const DeviceSidebar: React.FC = () => {
                   : "led red"
             }
           />
+          {/* 折叠按钮（Ctrl/Cmd+B 也可触发） */}
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSidebar();
+            }}
+            title="折叠侧栏 (Ctrl/Cmd+B)"
+            style={{
+              cursor: "pointer",
+              color: "var(--c-gray)",
+              display: "inline-flex",
+              padding: 2,
+              borderRadius: 3,
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--c-orange)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--c-gray)")}
+          >
+            <Icon name="chevron-down" size={14} style={{ transform: "rotate(90deg)" }} />
+          </span>
         </div>
 
         {/* 屏幕镜像预览 */}

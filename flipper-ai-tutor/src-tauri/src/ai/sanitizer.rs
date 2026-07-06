@@ -52,44 +52,53 @@ static RE_EMAIL: OnceLock<Regex> = OnceLock::new();
 /// 获取正则（懒加载，避免重复编译）
 fn uid_regex() -> &'static Regex {
     RE_UID.get_or_init(|| {
-        // UID 前缀 + 4~10 字节十六进制
-        Regex::new(r"(?i)(uid|card\s*id|nfc\s*id)\s*[:=]?\s*([0-9A-Fa-f]{8,20})").unwrap()
+        // UID 前缀 + 4~10 字节十六进制，或 0x 前缀的裸十六进制
+        Regex::new(r"(?i)(uid|card\s*id|nfc\s*id)\s*[:=]?\s*([0-9A-Fa-f]{8,20})|(0x[0-9A-Fa-f]{8,20})")
+            .expect("UID 正则编译失败")
     })
 }
 
 fn nfc_key_regex() -> &'static Regex {
     RE_NFC_KEY.get_or_init(|| {
-        Regex::new(r"(?i)(key\s*[ab]\s*[:=]?\s*)([0-9A-Fa-f]{12})").unwrap()
+        Regex::new(r"(?i)(key\s*[ab]\s*[:=]?\s*)([0-9A-Fa-f]{12})")
+            .expect("NFC 密钥正则编译失败")
     })
 }
 
 fn wifi_password_regex() -> &'static Regex {
     RE_WIFI_PASSWORD.get_or_init(|| {
-        Regex::new(r#"(?i)(password|passwd|psk|wpa\s*key)\s*[=:]\s*["']?([^\s"',;]{8,63})["']?"#).unwrap()
+        Regex::new(r#"(?i)(password|passwd|psk|wpa\s*key)\s*[=:]\s*["']?([^\s"',;]{8,63})["']?"#)
+            .expect("WiFi 密码正则编译失败")
     })
 }
 
 fn coordinates_regex() -> &'static Regex {
     RE_COORDINATES.get_or_init(|| {
-        Regex::new(r"(?i)(lat(?:itude)?|lng|lon(?:gitude)?)\s*[=:]\s*(-?\d{1,3}\.\d{4,})").unwrap()
+        // 前缀格式 lat=39.9042，或 DMS 格式 39°54'15"N
+        Regex::new(r#"(?i)(lat(?:itude)?|lng|lon(?:gitude)?)\s*[=:]\s*(-?\d{1,3}\.\d{4,})|\d{1,3}°\s*\d{1,2}'\s*\d{1,2}[""']?\s*[NSEW]"#)
+            .expect("坐标正则编译失败")
     })
 }
 
 fn api_key_regex() -> &'static Regex {
     RE_API_KEY.get_or_init(|| {
-        Regex::new(r"(?i)(sk-[A-Za-z0-9]{20,}|api[_-]?key\s*[=:]\s*[A-Za-z0-9]{16,}|bearer\s+[A-Za-z0-9._-]{20,})").unwrap()
+        // sk-xxx / api_key=xxx / Bearer xxx / GitHub token / AWS AKIA / JWT
+        Regex::new(r"(?i)(sk-[A-Za-z0-9]{20,}|api[_-]?key\s*[=:]\s*[A-Za-z0-9]{16,}|bearer\s+[A-Za-z0-9._-]{20,}|gh[pousr]_[A-Za-z0-9]{36,}|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})")
+            .expect("API Key 正则编译失败")
     })
 }
 
 fn phone_regex() -> &'static Regex {
     RE_PHONE.get_or_init(|| {
-        Regex::new(r"1[3-9]\d{9}").unwrap()
+        // 中国大陆 11 位手机号 + 国际号码
+        Regex::new(r"1[3-9]\d{9}|\+\d{1,3}\s?\d{6,14}").expect("手机号正则编译失败")
     })
 }
 
 fn email_regex() -> &'static Regex {
     RE_EMAIL.get_or_init(|| {
-        Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}").unwrap()
+        Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+            .expect("邮箱正则编译失败")
     })
 }
 
@@ -159,7 +168,13 @@ pub fn sanitize_text(text: &str) -> (String, SanitizeReport) {
     if uid_count > 0 {
         result = uid_regex()
             .replace_all(&result, |caps: &regex::Captures| {
-                format!("{}[REDACTED:UID]", &caps[1])
+                // 前缀模式：保留前缀 + [REDACTED:UID]
+                if let Some(prefix) = caps.get(1) {
+                    format!("{}[REDACTED:UID]", prefix.as_str())
+                } else {
+                    // 0x 裸十六进制模式：整体替换
+                    "[REDACTED:UID]".to_string()
+                }
             })
             .to_string();
         report.uid_redacted = uid_count;
@@ -192,7 +207,13 @@ pub fn sanitize_text(text: &str) -> (String, SanitizeReport) {
     if coord_count > 0 {
         result = coordinates_regex()
             .replace_all(&result, |caps: &regex::Captures| {
-                format!("{}[REDACTED:COORD]", &caps[1])
+                // 前缀模式：保留前缀 + [REDACTED:COORD]
+                if let Some(prefix) = caps.get(1) {
+                    format!("{}[REDACTED:COORD]", prefix.as_str())
+                } else {
+                    // DMS 格式：整体替换
+                    "[REDACTED:COORD]".to_string()
+                }
             })
             .to_string();
         report.coordinates_redacted = coord_count;
@@ -249,29 +270,27 @@ fn count_matches(re: &Regex, text: &str) -> u32 {
 
 /// 对整个对话消息列表进行脱敏
 ///
-/// 仅对 role=user 的消息内容脱敏（AI 回复一般不含用户敏感数据）
+/// 对所有消息（user / assistant / system）内容均执行脱敏扫描：
+///   - user 消息：脱敏后追加系统提示，告知用户敏感数据已被处理
+///   - assistant / system 消息：静默脱敏，不追加提示（避免污染 AI 上下文）
 pub fn sanitize_messages(messages: &[ChatMessage]) -> Vec<ChatMessage> {
     let mut sanitized = Vec::with_capacity(messages.len());
     for msg in messages {
         let mut new_msg = msg.clone();
-        // 仅脱敏用户消息
-        if msg.role == crate::ai::ChatRole::User {
-            let (clean, report) = sanitize_text(&msg.content);
-            if report.has_redactions() {
-                log::info!(
-                    "用户消息 {} 已脱敏: {}",
-                    msg.id,
-                    report.summary()
-                );
-                // 在脱敏后的内容末尾追加提示（可选）
+        let (clean, report) = sanitize_text(&msg.content);
+        if report.has_redactions() {
+            log::info!("消息 {} 已脱敏: {}", msg.id, report.summary());
+            if msg.role == crate::ai::ChatRole::User {
                 new_msg.content = format!(
                     "{}\n\n[系统提示：本消息中的敏感数据已自动脱敏，{}]",
-                    clean,
-                    report.summary()
+                    clean, report.summary()
                 );
             } else {
+                // AI 回复：静默脱敏，不追加提示
                 new_msg.content = clean;
             }
+        } else {
+            new_msg.content = clean;
         }
         sanitized.push(new_msg);
     }

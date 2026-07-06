@@ -291,3 +291,116 @@ pub fn virtual_storage_info() -> (u64, u64) {
     let info = &virtual_device().device_info;
     (info.sd_card_total_bytes, info.sd_card_free_bytes)
 }
+
+// -------------------- 虚拟 GPIO --------------------
+//
+// 模拟 FlipperZero 8 个可编程 GPIO 引脚的状态：
+//   PC0, PC1, PC3, PB2, PB3, PA4, PA6, PA7
+// 默认全部为 INPUT 模式、无上下拉、电平 0。
+// 支持设置模式、写电平、读电平，以及 OTG 供电开关。
+// 虚拟设备连接后通过这些函数提供与真实 RPC 一致的行为。
+
+/// 虚拟 GPIO 引脚状态
+#[derive(Clone)]
+pub struct VirtualGpioPin {
+    /// 模式："output" | "input"
+    pub mode: String,
+    /// 上下拉："no" | "up" | "down"
+    pub pull: String,
+    /// 电平值 0 或 1
+    pub value: u32,
+}
+
+/// 虚拟 GPIO 引脚名称（与 pb_gpio::GpioPin 枚举顺序一致）
+const VIRTUAL_GPIO_PINS: &[&str] = &["PC0", "PC1", "PC3", "PB2", "PB3", "PA4", "PA6", "PA7"];
+
+/// 全局虚拟 GPIO 状态表（惰性初始化，8 个引脚默认全 INPUT）
+static VIRTUAL_GPIO: OnceLock<Mutex<Vec<VirtualGpioPin>>> = OnceLock::new();
+
+/// 全局虚拟 OTG 模式（0=off, 1=on）
+static VIRTUAL_OTG_MODE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+/// 获取虚拟 GPIO 状态表（惰性初始化）
+fn virtual_gpio_state() -> &'static Mutex<Vec<VirtualGpioPin>> {
+    VIRTUAL_GPIO.get_or_init(|| {
+        Mutex::new(
+            VIRTUAL_GPIO_PINS
+                .iter()
+                .map(|_| VirtualGpioPin {
+                    mode: "input".to_string(),
+                    pull: "no".to_string(),
+                    value: 0,
+                })
+                .collect(),
+        )
+    })
+}
+
+/// 查找引脚在 VIRTUAL_GPIO_PINS 中的索引（大小写不敏感）
+fn virtual_gpio_pin_index(pin: &str) -> Option<usize> {
+    VIRTUAL_GPIO_PINS
+        .iter()
+        .position(|n| n.eq_ignore_ascii_case(pin))
+}
+
+/// 获取所有虚拟 GPIO 引脚状态
+/// 返回 (名称, 模式, 上下拉, 电平值) 列表
+pub fn virtual_gpio_get_all() -> Vec<(String, String, String, u32)> {
+    let pins = virtual_gpio_state().lock();
+    VIRTUAL_GPIO_PINS
+        .iter()
+        .zip(pins.iter())
+        .map(|(name, p)| (name.to_string(), p.mode.clone(), p.pull.clone(), p.value))
+        .collect()
+}
+
+/// 设置虚拟 GPIO 引脚模式
+/// 返回 true 表示引脚存在并已设置，false 表示未知引脚
+pub fn virtual_gpio_set_mode(pin: &str, mode: &str) -> bool {
+    let mode_lower = mode.to_lowercase();
+    if mode_lower != "output" && mode_lower != "input" {
+        return false;
+    }
+    match virtual_gpio_pin_index(pin) {
+        Some(idx) => {
+            let mut pins = virtual_gpio_state().lock();
+            pins[idx].mode = mode_lower;
+            true
+        }
+        None => false,
+    }
+}
+
+/// 写虚拟 GPIO 引脚电平值（自动归一化为 0/1）
+/// 返回 true 表示引脚存在并已写入，false 表示未知引脚
+pub fn virtual_gpio_write_pin(pin: &str, value: u32) -> bool {
+    match virtual_gpio_pin_index(pin) {
+        Some(idx) => {
+            let mut pins = virtual_gpio_state().lock();
+            pins[idx].value = if value != 0 { 1 } else { 0 };
+            true
+        }
+        None => false,
+    }
+}
+
+/// 读虚拟 GPIO 引脚电平值
+/// 返回 Some(value) 表示引脚存在，None 表示未知引脚
+pub fn virtual_gpio_read_pin(pin: &str) -> Option<u32> {
+    virtual_gpio_pin_index(pin).map(|idx| virtual_gpio_state().lock()[idx].value)
+}
+
+/// 获取虚拟 OTG 模式（"on" | "off"）
+pub fn virtual_gpio_get_otg_mode() -> String {
+    if VIRTUAL_OTG_MODE.load(std::sync::atomic::Ordering::Relaxed) == 1 {
+        "on".to_string()
+    } else {
+        "off".to_string()
+    }
+}
+
+/// 设置虚拟 OTG 模式（"on" / "off"）
+pub fn virtual_gpio_set_otg_mode(mode: &str) {
+    let val = if mode.eq_ignore_ascii_case("on") { 1 } else { 0 };
+    VIRTUAL_OTG_MODE.store(val, std::sync::atomic::Ordering::Relaxed);
+}

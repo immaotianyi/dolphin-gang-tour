@@ -76,17 +76,11 @@ export function useConnectionState() {
 // ================================================================
 
 /**
- * 自动连接 hook。
- * 组件挂载时自动扫描设备、注册事件监听；
- * 组件卸载时清理监听。
+ * 自动连接 hook（已弃用 — 事件监听已由模块级自动注册）。
+ * 保留此 hook 仅为向后兼容，initListeners 已改为空操作。
+ * 组件挂载时仅执行自动扫描。
  *
- * @example
- * ```tsx
- * function App() {
- *   useAutoConnect();
- *   return <MainUI />;
- * }
- * ```
+ * @deprecated 事件监听已在模块级自动注册，无需手动调用
  */
 export function useAutoConnect(): void {
   const initializedRef = useRef(false);

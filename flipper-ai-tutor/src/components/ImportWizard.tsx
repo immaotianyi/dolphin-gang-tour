@@ -317,6 +317,19 @@ export const ImportWizard: React.FC = () => {
                   <div className="text-dim font-mono" style={{ fontSize: 12 }}>
                     {p.description}
                   </div>
+                  {/* 法律提示：敏感资源类别 */}
+                  {p.category === "subghz" && (
+                    <span style={{ fontSize: 10, color: "#ff4444", marginLeft: 4 }}>⚠ 信号重放需遵守《无线电管理条例》</span>
+                  )}
+                  {p.category === "nfc" && (
+                    <span style={{ fontSize: 10, color: "#ff4444", marginLeft: 4 }}>⚠ 仅限复制本人合法持有的卡片</span>
+                  )}
+                  {p.category === "rfid" && (
+                    <span style={{ fontSize: 10, color: "#ff4444", marginLeft: 4 }}>⚠ 仅限复制本人合法持有的卡片</span>
+                  )}
+                  {p.category === "badusb" && (
+                    <span style={{ fontSize: 10, color: "#ff4444", marginLeft: 4 }}>⚠ 仅限在自有设备上测试</span>
+                  )}
                   <div className="font-mono text-dim" style={{ fontSize: 11 }}>
                     {p.fileCount} 文件 | {fmtBytes(p.sizeBytes)} | -&gt; {p.targetPath}
                   </div>

@@ -1,7 +1,7 @@
 {
   "name": "flipper-ai-tutor",
   "version": "1.0.0",
-  "description": "FlipperZero AI 小白助手 - 手把手AI教学 & 一键资源导入",
+  "description": "DolphinTutor - 适配 Flipper Zero 的手把手AI教学 & 一键资源导入（非官方产品）",
   "type": "module",
   "scripts": {
     "dev": "vite",

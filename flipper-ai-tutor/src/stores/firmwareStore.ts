@@ -161,20 +161,8 @@ export const useFirmwareStore = create<FirmwareStore>((set, get) => ({
     }),
 
   initListeners: async () => {
-    const unlisten = await onFlashProgress((progress) => {
-      set({ flashProgress: progress });
-
-      if (progress.phase === "done") {
-        set({ isFlashing: false });
-        useDeviceStore.getState().refreshDeviceInfo();
-      } else if (progress.phase === "error") {
-        set({
-          isFlashing: false,
-          lastError: progress.errorMessage ?? "刷写出错",
-        });
-      }
-    });
-    return unlisten;
+    // 已由模块级自动注册监听，此方法保留为空操作以兼容旧调用
+    return () => {};
   },
 
   // 兼容别名
@@ -214,10 +202,17 @@ onFlashProgress((progress) => {
   _flashUnlisten = fn;
 });
 
+let _lastDfuMode: boolean | null = null;
+let _lastVersion: string | null = null;
 useDeviceStore.subscribe((state) => {
   const isDfuMode = state.connectionState === "dfu_mode";
   const currentVersion = state.deviceInfo?.firmwareVersion ?? "未知";
-  useFirmwareStore.setState({ isDfuMode, currentVersion });
+  // 仅在相关状态变化时更新，避免无意义的重复触发
+  if (isDfuMode !== _lastDfuMode || currentVersion !== _lastVersion) {
+    _lastDfuMode = isDfuMode;
+    _lastVersion = currentVersion;
+    useFirmwareStore.setState({ isDfuMode, currentVersion });
+  }
 });
 
 // Tauri 模式下自动加载固件列表

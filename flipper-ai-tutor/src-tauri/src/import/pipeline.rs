@@ -31,6 +31,38 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+// -------------------- 临时文件守卫与取消检查 --------------------
+
+/// 临时文件守卫：Drop 时自动删除指定文件（用于清理打包产生的临时 tar 文件）
+struct TempFileGuard {
+    path: Option<PathBuf>,
+}
+
+impl TempFileGuard {
+    fn new(path: PathBuf) -> Self {
+        Self { path: Some(path) }
+    }
+}
+
+impl Drop for TempFileGuard {
+    fn drop(&mut self) {
+        if let Some(p) = &self.path {
+            log::debug!("清理临时文件: {:?}", p);
+            let _ = std::fs::remove_file(p);
+        }
+    }
+}
+
+/// 检查取消标志，已取消时返回错误
+fn check_cancelled(cancel_flag: Option<&std::sync::atomic::AtomicBool>) -> Result<()> {
+    if let Some(flag) = cancel_flag {
+        if flag.load(std::sync::atomic::Ordering::SeqCst) {
+            bail!("导入已取消");
+        }
+    }
+    Ok(())
+}
+
 // -------------------- 资源包列表 --------------------
 
 /// 获取可导入的资源包列表
@@ -87,8 +119,8 @@ pub fn list_resource_packages() -> Vec<ResourcePackage> {
         },
         ResourcePackage {
             id: "games-pack".to_string(),
-            name: "游戏合集（需自行下载）".to_string(),
-            description: "FlipperZero 游戏为 .fap 二进制格式，请从 lab.flipper.net 应用目录下载后放入设备".to_string(),
+            name: "游戏合集".to_string(),
+            description: "6 款经典游戏（需运行 download.sh 下载 .fap 文件）".to_string(),
             category: ResourceCategory::Games,
             size_bytes: 0,
             file_count: 0,
@@ -97,12 +129,12 @@ pub fn list_resource_packages() -> Vec<ResourcePackage> {
             version: "1.0.0".to_string(),
             api_level_required: 1,
             local_path: Some(base.join("games-pack").to_string_lossy().to_string()),
-            download_url: Some("https://lab.flipper.net/apps?category=games".to_string()),
+            download_url: Some("https://github.com/xMasterX/all-the-plugins/releases".to_string()),
         },
         ResourcePackage {
             id: "themes-pack".to_string(),
-            name: "主题包（需 Momentum Asset Pack）".to_string(),
-            description: "主题需通过 Momentum 固件 Asset Pack 系统安装，详见 README".to_string(),
+            name: "主题包（需运行 download.sh 下载）".to_string(),
+            description: "Psyduck + WatchDogs 主题（需运行 download.sh 下载）".to_string(),
             category: ResourceCategory::Themes,
             size_bytes: 0,
             file_count: 0,
@@ -164,6 +196,7 @@ fn find_package(package_id: &str) -> Result<ResourcePackage> {
 pub fn run_import_pipeline<F>(
     package_ids: &[String],
     session: Option<&RpcSession>,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
     progress_cb: F,
 ) -> Result<ImportSummary>
 where
@@ -195,6 +228,9 @@ where
     progress_cb(progress.clone());
 
     for (idx, package_id) in package_ids.iter().enumerate() {
+        // 每个资源包开始前检查取消标志（H4）
+        check_cancelled(cancel_flag)?;
+
         progress.current_file = package_id.clone();
         progress.log(format!(
             "[{}/{}] 正在导入资源包: {}",
@@ -204,7 +240,7 @@ where
         ));
         progress_cb(progress.clone());
 
-        match import_single_package(&packages, package_id, session, &mut progress, &progress_cb) {
+        match import_single_package(&packages, package_id, session, cancel_flag, &mut progress, &progress_cb) {
             Ok(pkg) => {
                 imported += 1;
                 total_files += pkg.file_count;
@@ -256,6 +292,7 @@ fn import_single_package<F>(
     packages: &[ResourcePackage],
     package_id: &str,
     session: &RpcSession,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
     mut progress: &mut ImportProgress,
     progress_cb: &F,
 ) -> Result<ResourcePackage>
@@ -269,12 +306,14 @@ where
         .clone();
 
     // ---------- 阶段 1：预检空间 ----------
+    check_cancelled(cancel_flag)?;
     progress.phase = ImportPhase::Transferring;
     progress.log("阶段 1/6: 预检 SD 卡空间...");
     progress_cb(progress.clone());
     check_available_space(session, &package)?;
 
     // ---------- 阶段 2：备份 ----------
+    check_cancelled(cancel_flag)?;
     progress.phase = ImportPhase::Backup;
     progress.log(format!(
         "阶段 2/6: 备份设备端 {} ...",
@@ -284,6 +323,7 @@ where
     backup_device_path(session, &package)?;
 
     // ---------- 阶段 3：tar 打包 ----------
+    check_cancelled(cancel_flag)?;
     progress.phase = ImportPhase::Packaging;
     progress.log(format!(
         "阶段 3/6: 打包资源包 {} ...",
@@ -291,10 +331,13 @@ where
     ));
     progress_cb(progress.clone());
     let tar_path = pack_resources(&package, &mut progress, progress_cb)?;
+    // 临时文件守卫：函数返回时（包括错误路径）自动清理 tar 包（M9）
+    let _tar_guard = TempFileGuard::new(tar_path.clone());
     let tar_data = std::fs::read(&tar_path)?;
     let local_hash = sha256_hex(&tar_data);
 
     // ---------- 阶段 4：PC 侧解压 + 逐文件传输 ----------
+    check_cancelled(cancel_flag)?;
     // FlipperZero 固件不内置 tar 解压工具，因此在 PC 侧解压 tar 包，
     // 逐个文件通过 RPC storage_write 写入设备，确保目录结构完整
     progress.phase = ImportPhase::Transferring;
@@ -303,22 +346,23 @@ where
         package.file_count
     ));
     progress_cb(progress.clone());
-    extract_and_transfer_files(session, &package, &tar_data, &mut progress, progress_cb)?;
+    extract_and_transfer_files(session, &package, &tar_data, cancel_flag, &mut progress, progress_cb)?;
 
     // ---------- 阶段 5：Hash 校验 ----------
+    check_cancelled(cancel_flag)?;
     progress.phase = ImportPhase::Verifying;
     progress.log("阶段 5/6: 校验传输完整性...");
     progress_cb(progress.clone());
     verify_integrity(session, &package, &local_hash)?;
 
     // ---------- 阶段 6：刷新 ----------
+    check_cancelled(cancel_flag)?;
     progress.phase = ImportPhase::Refreshing;
     progress.log("阶段 6/6: 刷新资源索引...");
     progress_cb(progress.clone());
     refresh_resource_index(session, &package)?;
 
-    // 清理临时文件
-    let _ = std::fs::remove_file(&tar_path);
+    // 临时 tar 文件由 _tar_guard 在函数返回时自动清理
 
     progress.files_completed += package.file_count;
     progress.bytes_transferred += package.size_bytes;
@@ -422,9 +466,9 @@ where
         bail!("资源包 {} 本地文件不存在，请手动下载后放入 {}", package.id, local_path);
     }
 
-    // 创建临时 tar 文件
+    // 创建临时 tar 文件（使用含进程 ID 的唯一文件名，避免并发导入时互相覆盖，M9）
     let tmp_dir = std::env::temp_dir();
-    let tar_path = tmp_dir.join(format!("{}.tar", package.id));
+    let tar_path = tmp_dir.join(format!("{}_{}.tar", package.id, std::process::id()));
     progress.log(format!("打包到临时文件: {:?}", tar_path));
 
     let tar_file = std::fs::File::create(&tar_path)?;
@@ -506,6 +550,7 @@ fn extract_and_transfer_files<F>(
     session: &RpcSession,
     package: &ResourcePackage,
     tar_data: &[u8],
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
     progress: &mut ImportProgress,
     progress_cb: &F,
 ) -> Result<()>
@@ -528,6 +573,9 @@ where
 
     // 遍历 tar 条目
     for entry_result in archive.entries()? {
+        // 每次迭代检查取消标志（H4）
+        check_cancelled(cancel_flag)?;
+
         let mut entry = entry_result?;
 
         // 获取条目路径
@@ -536,6 +584,12 @@ where
 
         // 跳过空路径和隐藏文件
         if entry_path_str.is_empty() || entry_path_str.starts_with('.') {
+            continue;
+        }
+
+        // 路径穿越防护：跳过包含 ".." 的可疑条目，防止写入目标目录之外（M3）
+        if entry_path_str.contains("..") {
+            log::warn!("跳过可疑路径: {}", entry_path_str);
             continue;
         }
 

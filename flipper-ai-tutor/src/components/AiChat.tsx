@@ -251,6 +251,21 @@ const MessageBubble: React.FC<{ msg: ChatMessage; onGrow?: () => void }> = ({
       {msg.imageUrl && (
         <img className="msg-image" src={msg.imageUrl} alt="screenshot" />
       )}
+      {/* AI 生成内容标识 — 符合《深度合成管理规定》第17条 */}
+      {isAi && !msg.isStreaming && msg.content.length > 0 && (
+        <span style={{
+          display: "inline-block",
+          marginLeft: 6,
+          fontSize: 10,
+          color: "var(--c-dim)",
+          border: "1px solid var(--c-gray)",
+          padding: "0 4px",
+          borderRadius: 2,
+          verticalAlign: "middle",
+        }}>
+          AI生成
+        </span>
+      )}
     </div>
   );
 };
@@ -476,7 +491,7 @@ const EmptyState: React.FC<{ onPickCourse: (id: string) => void }> = ({
       DOLPHIN ONLINE
     </div>
     <div className="font-term" style={{ color: "var(--c-green)", fontSize: 18, marginBottom: 16 }}>
-      嗨！我是你的 Flipper AI 导师。我可以手把手教你玩转 Flipper Zero。
+      嗨！我是你的 DolphinTutor AI 导师。我可以手把手教你玩转 Flipper Zero。
       <br />
       点下面任一课程开始，或直接在底部输入框提问。
     </div>

@@ -8,25 +8,76 @@
 @tailwind utilities;
 
 /* ====== CSS 变量 ====== */
+/* 非主题相关变量（非颜色变量 + 不参与主题切换的颜色变量）保持在 :root 中，
+   确保主题切换不会破坏 --c-red / --c-yellow / --c-orange-bright 等变量。 */
 :root {
-  --c-orange: #ff7b24;
   --c-orange-bright: #ff9b44;
   --c-black: #000000;
   --c-dark: #0a0a0a;
-  --c-dark2: #111111;
   --c-dark3: #1a1a1a;
   --c-white: #ffffff;
-  --c-green: #00ff41;
   --c-green-dim: #00cc33;
   --c-red: #ff3333;
   --c-yellow: #ffcc00;
-  --c-blue: #00ccff;
-  --c-purple: #cc66ff;
-  --c-gray: #333333;
   --c-gray-dim: #1a1a1a;
   --font-pixel: "Press Start 2P", monospace;
   --font-term: "VT323", monospace;
   --font-mono: "Fira Code", "Consolas", monospace;
+}
+
+/* ====== 主题切换 ====== */
+
+/* 默认主题：Cyberpunk Orange */
+:root,
+:root[data-theme="cyberpunk"] {
+  --c-orange: #ff8c00;
+  --c-green: #00ff41;
+  --c-blue: #4d9eff;
+  --c-purple: #b366ff;
+  --c-gray: #333333;
+  --c-dark2: #111111;
+  --c-bg: #0a0a0a;
+  --c-text: #ffffff;
+  --c-dim: #888888;
+}
+
+/* Green Terminal 主题 */
+:root[data-theme="green"] {
+  --c-orange: #00ff41;
+  --c-green: #00ff41;
+  --c-blue: #00cc66;
+  --c-purple: #00aa55;
+  --c-gray: #1a3a1a;
+  --c-dark2: #0a1a0a;
+  --c-bg: #000800;
+  --c-text: #00ff41;
+  --c-dim: #008822;
+}
+
+/* Amber Terminal 主题 */
+:root[data-theme="amber"] {
+  --c-orange: #ffb000;
+  --c-green: #ffb000;
+  --c-blue: #cc8800;
+  --c-purple: #ff8800;
+  --c-gray: #3a2a00;
+  --c-dark2: #1a1000;
+  --c-bg: #0a0500;
+  --c-text: #ffb000;
+  --c-dim: #886600;
+}
+
+/* Ice Blue 主题 */
+:root[data-theme="ice"] {
+  --c-orange: #4d9eff;
+  --c-green: #4d9eff;
+  --c-blue: #4d9eff;
+  --c-purple: #88bbff;
+  --c-gray: #1a2a3a;
+  --c-dark2: #0a1018;
+  --c-bg: #050810;
+  --c-text: #88ccff;
+  --c-dim: #446688;
 }
 
 /* ====== Reset ====== */

@@ -251,7 +251,7 @@ where
     let api_messages = build_api_messages(&sanitized, &system_prompt);
 
     // 4. 构建流式请求
-    let api_url = get_api_url(config);
+    let api_url = get_api_url(config)?;
     let api_key = get_api_key(config)?;
 
     let request = ChatRequest {
@@ -430,7 +430,7 @@ async fn call_openai_compatible(
     config: &AiModelConfig,
     messages: Vec<ApiMessage>,
 ) -> Result<ChatResponse> {
-    let api_url = get_api_url(config);
+    let api_url = get_api_url(config)?;
     let api_key = get_api_key(config)?;
 
     let request = ChatRequest {
@@ -491,9 +491,11 @@ async fn call_openai_multimodal(
     config: &AiModelConfig,
     messages: Vec<serde_json::Value>,
 ) -> Result<ChatResponse> {
+    // 自定义 URL 需通过 SSRF 安全校验
     let api_url = if config.api_url.is_empty() {
         "https://api.openai.com/v1/chat/completions".to_string()
     } else {
+        validate_api_url(&config.api_url)?;
         config.api_url.clone()
     };
     let api_key = get_api_key(config)?;
@@ -630,18 +632,72 @@ fn build_multimodal_messages(
 
 // -------------------- API 配置辅助 --------------------
 
+/// 校验自定义 API URL 是否安全（防止 SSRF）
+///
+/// 校验规则：
+///   1. 仅允许 http/https 协议
+///   2. HTTP 仅允许 localhost / 127.0.0.1（开发调试用）
+///   3. 禁止内网地址（10.x / 192.168.x / 172.16-31.x）与云元数据地址
+fn validate_api_url(url: &str) -> Result<()> {
+    let parsed = url::Url::parse(url).map_err(|_| anyhow!("无效的 API URL: {}", url))?;
+
+    // 仅允许 HTTPS（localhost 例外）
+    match parsed.scheme() {
+        "https" => {}
+        "http" => {
+            let host = parsed.host_str().unwrap_or("");
+            if host != "localhost" && host != "127.0.0.1" {
+                bail!("HTTP 仅允许 localhost，请使用 HTTPS");
+            }
+        }
+        _ => bail!("仅支持 http/https 协议"),
+    }
+
+    // 禁止内网地址（防止 SSRF 探测）
+    let host = parsed.host_str().unwrap_or("");
+    if host.starts_with("10.")
+        || host.starts_with("192.168.")
+        || host.starts_with("172.16.")
+        || host.starts_with("172.17.")
+        || host.starts_with("172.18.")
+        || host.starts_with("172.19.")
+        || host.starts_with("172.20.")
+        || host.starts_with("172.21.")
+        || host.starts_with("172.22.")
+        || host.starts_with("172.23.")
+        || host.starts_with("172.24.")
+        || host.starts_with("172.25.")
+        || host.starts_with("172.26.")
+        || host.starts_with("172.27.")
+        || host.starts_with("172.28.")
+        || host.starts_with("172.29.")
+        || host.starts_with("172.30.")
+        || host.starts_with("172.31.")
+        || host == "169.254.169.254" // 云元数据
+        || host == "0.0.0.0"
+    {
+        bail!("不允许访问内网/元数据地址: {}", host);
+    }
+
+    Ok(())
+}
+
 /// 获取 API URL
-fn get_api_url(config: &AiModelConfig) -> String {
+///
+/// 优先使用用户自定义 URL（需通过 SSRF 安全校验），否则使用 provider 默认 URL。
+/// 返回 `Result<String>`：自定义 URL 不安全时返回 Err。
+fn get_api_url(config: &AiModelConfig) -> Result<String> {
     if !config.api_url.is_empty() {
-        return config.api_url.clone();
+        validate_api_url(&config.api_url)?;
+        return Ok(config.api_url.clone());
     }
     match config.provider {
-        AiProvider::Qwen => {
-            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions".to_string()
-        }
-        AiProvider::Deepseek => "https://api.deepseek.com/v1/chat/completions".to_string(),
-        AiProvider::Openai => "https://api.openai.com/v1/chat/completions".to_string(),
-        AiProvider::Local => String::new(),
+        AiProvider::Qwen => Ok(
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions".to_string(),
+        ),
+        AiProvider::Deepseek => Ok("https://api.deepseek.com/v1/chat/completions".to_string()),
+        AiProvider::Openai => Ok("https://api.openai.com/v1/chat/completions".to_string()),
+        AiProvider::Local => Ok(String::new()),
     }
 }
 

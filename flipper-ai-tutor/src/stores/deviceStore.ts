@@ -197,8 +197,10 @@ export const useDeviceStore = create<DeviceStore>((set, get) => ({
     });
 
     // 一段时间后清除提示文本，避免长期占用 UI
-    setTimeout(() => {
+    if (_demoStatusTimer) clearTimeout(_demoStatusTimer);
+    _demoStatusTimer = setTimeout(() => {
       useDeviceStore.setState({ demoStatusText: null });
+      _demoStatusTimer = null;
     }, 1500);
   },
 
@@ -279,19 +281,8 @@ export const useDeviceStore = create<DeviceStore>((set, get) => ({
   clearError: () => set({ lastError: null }),
 
   initListeners: async () => {
-    const unlisten = await onDeviceStateChange((state) => {
-      set({ connectionState: state });
-
-      // 根据新状态自动处理
-      if (state === "connected") {
-        // 设备刚连上，自动获取设备信息
-        get().refreshDeviceInfo();
-      } else if (state === "no_device") {
-        // 设备断开，清空设备信息
-        set({ deviceInfo: null, usbPort: null });
-      }
-    });
-    return unlisten;
+    // 已由模块级自动注册监听，此方法保留为空操作以兼容旧调用
+    return () => {};
   },
 }));
 
@@ -301,6 +292,7 @@ export const useDeviceStore = create<DeviceStore>((set, get) => ({
 // ================================================================
 
 let _deviceUnlisten: (() => void) | null = null;
+let _demoStatusTimer: ReturnType<typeof setTimeout> | null = null;
 
 onDeviceStateChange((state) => {
   useDeviceStore.setState({ connectionState: state });

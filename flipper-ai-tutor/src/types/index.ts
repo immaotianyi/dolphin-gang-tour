@@ -221,6 +221,23 @@ export interface ScreenMirrorFrame {
   data: number[]; // 1bit per pixel, 0=off 1=on
 }
 
+// ====== GPIO 相关 ======
+
+/** GPIO 引脚状态 */
+export interface GpioPinState {
+  /** 引脚名称，如 "PC0" */
+  pin: string;
+  /** 模式："output" | "input" */
+  mode: "output" | "input";
+  /** 上下拉："no" | "up" | "down" */
+  pull: "no" | "up" | "down";
+  /** 电平值 0 或 1（OUTPUT 为写入值，INPUT 为读取值） */
+  value: number;
+}
+
+/** FlipperZero 可编程 GPIO 引脚名 */
+export type GpioPinName = "PC0" | "PC1" | "PC3" | "PB2" | "PB3" | "PA4" | "PA6" | "PA7";
+
 // ====== 通用 IPC 响应 ======
 
 export interface IpcResult<T = unknown> {
@@ -232,4 +249,38 @@ export interface IpcResult<T = unknown> {
 export interface IpcEvent<T = unknown> {
   event: string;
   payload: T;
+}
+
+// ====== 桌宠相关 ======
+
+export type PetMood = "happy" | "normal" | "sad" | "excited" | "sleeping";
+
+export type PetAction = "idle" | "eating" | "playing" | "sleeping" | "thinking";
+
+export interface PetState {
+  name: string;
+  mood: PetMood;
+  action: PetAction;
+  level: number;
+  exp: number;          // 当前经验
+  expToNext: number;    // 升级所需经验
+  hunger: number;       // 饥饿值 0-100, 100=最饿
+  happiness: number;    // 快乐值 0-100, 100=最快乐
+  energy: number;       // 精力值 0-100, 100=满精力
+  lastFed: number | null;     // 上次喂食时间戳
+  lastPlayed: number | null;  // 上次玩耍时间戳
+  birthDate: number;    // 创建时间戳
+}
+
+// ====== 成就相关 ======
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  unlockedAt: number | null;
+  progress: number;
+  target: number;
 }

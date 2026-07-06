@@ -15,6 +15,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Icon } from "@/components/Icon";
 import { setAiModelConfig, getAiModelConfig } from "@/lib/tauri";
 import type { AiModelConfig } from "@/types";
+import { useThemeStore, THEMES } from "@/stores/themeStore";
 
 // -------------------- 服务商预设配置 --------------------
 
@@ -91,6 +92,9 @@ export const SettingsModal: React.FC = () => {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // 主题切换
+  const { theme, setTheme } = useThemeStore();
 
   // 打开时从后端加载当前配置
   useEffect(() => {
@@ -491,6 +495,71 @@ export const SettingsModal: React.FC = () => {
           <Icon name="save" size={14} />
           {saving ? "SAVING..." : "SAVE CONFIG"}
         </button>
+      </div>
+
+      {/* ---------- 主题切换 ---------- */}
+      <div style={{ marginBottom: 16 }}>
+        <div
+          className="font-pixel text-orange"
+          style={{ fontSize: 9, marginBottom: 8 }}
+        >
+          THEME
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 12px",
+                cursor: "pointer",
+                background: theme === t.id ? "var(--c-dark2)" : "transparent",
+                border:
+                  theme === t.id
+                    ? `1.5px solid ${t.color}`
+                    : "1px solid var(--c-gray)",
+                borderRadius: 4,
+                transition: "all 0.2s",
+              }}
+            >
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: t.color,
+                  boxShadow: `0 0 4px ${t.color}`,
+                }}
+              />
+              <div style={{ textAlign: "left" }}>
+                <div
+                  className="font-term"
+                  style={{ fontSize: 13, color: t.color }}
+                >
+                  {t.name}
+                </div>
+                <div className="font-term text-dim" style={{ fontSize: 11 }}>
+                  {t.desc}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* About 区域：非官方声明 / 开源许可证 / 隐私政策 / 版本信息 */}
+      <div style={{ borderTop: "1px solid var(--c-gray)", marginTop: 12, paddingTop: 12 }}>
+        <div className="font-pixel text-orange" style={{ fontSize: 9, marginBottom: 8 }}>ABOUT</div>
+        <div className="font-term text-dim" style={{ fontSize: 12, lineHeight: 1.8 }}>
+          DolphinTutor v1.0.0<br/>
+          非官方产品，与 Flipper Devices Inc. 无关联<br/>
+          "Flipper Zero" 是 Flipper Devices Inc. 的注册商标<br/>
+          本产品含 GPL v2 许可的 dfu-util（独立组件）<br/>
+          © 2026 DolphinTutor. Licensed under the MIT License.
+        </div>
       </div>
     </div>
   );

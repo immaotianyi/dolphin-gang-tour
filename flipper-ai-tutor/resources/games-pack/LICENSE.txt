@@ -1,0 +1,25 @@
+DolphinTutor games-pack 说明
+================================
+
+本目录不直接包含 .fap 二进制文件。
+
+获取方式：
+  运行 download.sh 自动下载，或从以下来源手动下载：
+  - https://github.com/xMasterX/all-the-plugins/releases
+  - https://lab.flipper.net/apps?category=games
+
+来源仓库许可证：
+  xMasterX/all-the-plugins 以 GPL-3.0 许可证分发。
+  .fap 文件为该仓库的编译产物，再分发需遵守 GPL-3.0 条款。
+  因此本仓库不直接包含这些文件，由用户自行下载。
+
+推荐游戏：
+  - game_2048.fap          (2048)
+  - flipper_pong.fap       (Pong)
+  - minesweeper_redux.fap  (扫雷)
+  - arkanoid.fap           (打砖块)
+  - asteroids.fap          (小行星)
+  - flappy_bird.fap        (Flappy Bird)
+
+注意：
+  .fap 文件针对特定固件 API Level 编译，请确认与你的固件版本兼容。

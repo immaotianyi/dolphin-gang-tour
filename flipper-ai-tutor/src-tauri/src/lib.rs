@@ -28,6 +28,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{Emitter, State};
 
+// H1: API Key 安全存储使用的系统钥匙串
+use keyring::Entry;
+
 // -------------------- 通用 IPC 响应结构 --------------------
 
 /// 统一的 IPC 响应结构，与前端 types/index.ts 中的 IpcResult<T> 对应
@@ -73,6 +76,31 @@ pub fn ok_void() -> IpcVoid {
     }
 }
 
+// -------------------- 成就 IPC 数据结构 --------------------
+
+/// 成就信息（返回给前端的单个成就）
+/// 与前端 types/index.ts 中的 Achievement 接口对应
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Achievement {
+    /// 成就唯一 ID
+    pub id: String,
+    /// 成就名称
+    pub name: String,
+    /// 成就描述
+    pub description: String,
+    /// 图标名，对应前端 IconName
+    pub icon: String,
+    /// 是否已解锁
+    pub unlocked: bool,
+    /// 解锁时间（unix 时间戳，秒）；未解锁时为 None
+    pub unlocked_at: Option<u64>,
+    /// 当前进度
+    pub progress: u32,
+    /// 目标值，0 表示无进度条
+    pub target: u32,
+}
+
 // -------------------- 全局应用状态 --------------------
 
 /// 全局应用状态，通过 Tauri 的 manage() 注入，命令中通过 State<AppState> 获取。
@@ -96,6 +124,8 @@ pub struct AppState {
     pub cancel_import_flag: Arc<std::sync::atomic::AtomicBool>,
     /// 取消标志：AI 流式对话（前端调用 cancel_ai_chat 时置为 true）
     pub cancel_ai_chat_flag: Arc<std::sync::atomic::AtomicBool>,
+    /// 成就数据：已解锁成就与进度（持久化到 achievements.json）
+    pub achievements: parking_lot::Mutex<AchievementData>,
 }
 
 // -------------------- AI 配置持久化 --------------------
@@ -103,11 +133,11 @@ pub struct AppState {
 /// 获取 AI 配置文件路径
 ///
 /// 配置文件存储在用户配置目录下：
-///   macOS: ~/Library/Application Support/flipper-ai-tutor/ai_config.json
-///   Linux: ~/.config/flipper-ai-tutor/ai_config.json
-///   Windows: %APPDATA%\flipper-ai-tutor\ai_config.json
+///   macOS: ~/Library/Application Support/app/ai_config.json
+///   Linux: ~/.config/app/ai_config.json
+///   Windows: %APPDATA%\app\ai_config.json
 fn ai_config_path() -> Option<std::path::PathBuf> {
-    let proj_dirs = directories::ProjectDirs::from("com", "flipperai", "flipper-ai-tutor")?;
+    let proj_dirs = directories::ProjectDirs::from("com", "dolphintutor", "app")?;
     let config_dir = proj_dirs.config_dir();
     let _ = std::fs::create_dir_all(config_dir);
     Some(config_dir.join("ai_config.json"))
@@ -132,7 +162,15 @@ fn load_ai_config() -> ai::AiModelConfig {
 
     match std::fs::read_to_string(&path) {
         Ok(content) => match serde_json::from_str::<ai::AiModelConfig>(&content) {
-            Ok(config) => {
+            Ok(mut config) => {
+                // H1: JSON 文件中 api_key 为空字符串，从系统钥匙串读取真实 API Key 填充回 config
+                config.api_key = match Entry::new("com.dolphintutor.app", "api_key") {
+                    Ok(entry) => entry.get_password().unwrap_or_default(),
+                    Err(e) => {
+                        log::warn!("创建钥匙串条目失败: {e}，API Key 留空");
+                        String::new()
+                    }
+                };
                 log::info!(
                     "AI 配置加载成功: provider={} model={}",
                     config.provider.as_str(),
@@ -153,6 +191,9 @@ fn load_ai_config() -> ai::AiModelConfig {
 }
 
 /// 保存 AI 配置到磁盘（设置配置时调用）
+///
+/// H1: API Key 不再明文存入 JSON 文件，改用系统钥匙串（keyring）存储。
+/// M11: 采用临时文件 + rename 的原子写入方式，避免写入中途崩溃导致配置损坏。
 fn save_ai_config(config: &ai::AiModelConfig) {
     let path = match ai_config_path() {
         Some(p) => p,
@@ -162,10 +203,46 @@ fn save_ai_config(config: &ai::AiModelConfig) {
         }
     };
 
-    match serde_json::to_string_pretty(config) {
+    // H1: 将 API Key 存入系统钥匙串，失败时 fallback 到空字符串（不 panic）
+    let api_key = config.api_key.clone();
+    if !api_key.is_empty() {
+        match Entry::new("com.dolphintutor.app", "api_key") {
+            Ok(entry) => {
+                if let Err(e) = entry.set_password(&api_key) {
+                    log::warn!("钥匙串存储 API Key 失败: {e}");
+                }
+            }
+            Err(e) => {
+                log::warn!("创建钥匙串条目失败: {e}");
+            }
+        }
+    }
+
+    // H1: 构造 JSON 副本，api_key 写空字符串，避免明文落盘
+    let mut config_for_file = config.clone();
+    config_for_file.api_key = String::new();
+
+    match serde_json::to_string_pretty(&config_for_file) {
         Ok(json) => {
-            if let Err(e) = std::fs::write(&path, json) {
-                log::warn!("写入 AI 配置文件失败: {e}");
+            // M11: 原子写入：先写临时文件，再 rename
+            let tmp_path = path.with_extension("json.tmp");
+            if let Err(e) = std::fs::write(&tmp_path, &json) {
+                log::warn!("写入 AI 配置临时文件失败: {e}");
+                return;
+            }
+            // H1: 设置文件权限 0600
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(meta) = std::fs::metadata(&tmp_path) {
+                    let mut perms = meta.permissions();
+                    perms.set_mode(0o600);
+                    let _ = std::fs::set_permissions(&tmp_path, perms);
+                }
+            }
+            if let Err(e) = std::fs::rename(&tmp_path, &path) {
+                log::warn!("重命名 AI 配置文件失败: {e}");
+                let _ = std::fs::remove_file(&tmp_path);
             } else {
                 log::debug!("AI 配置已保存到 {:?}", path);
             }
@@ -174,6 +251,92 @@ fn save_ai_config(config: &ai::AiModelConfig) {
             log::warn!("序列化 AI 配置失败: {e}");
         }
     }
+}
+
+// -------------------- 成就数据持久化 --------------------
+
+/// 成就数据（持久化到 achievements.json）
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AchievementData {
+    /// 已解锁成就：id -> 解锁时间（unix 时间戳，秒）
+    pub unlocked: std::collections::HashMap<String, u64>,
+    /// 成就进度：id -> 当前进度值
+    pub progress: std::collections::HashMap<String, u32>,
+}
+
+/// 获取当前 unix 时间戳（秒）
+fn now_unix_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// 成就数据持久化文件路径（app_config_dir/achievements.json）
+fn achievements_file_path() -> Option<std::path::PathBuf> {
+    let proj_dirs = directories::ProjectDirs::from("com", "dolphintutor", "app")?;
+    let config_dir = proj_dirs.config_dir();
+    let _ = std::fs::create_dir_all(config_dir);
+    Some(config_dir.join("achievements.json"))
+}
+
+/// 从磁盘加载成就数据（文件不存在或解析失败时返回空数据）
+fn load_achievement_data() -> AchievementData {
+    let path = match achievements_file_path() {
+        Some(p) => p,
+        None => return AchievementData::default(),
+    };
+    if !path.exists() {
+        return AchievementData::default();
+    }
+    match std::fs::read_to_string(&path) {
+        Ok(content) => serde_json::from_str::<AchievementData>(&content).unwrap_or_default(),
+        Err(_) => AchievementData::default(),
+    }
+}
+
+/// 将成就数据持久化到磁盘（原子写入：临时文件 + rename）
+fn save_achievement_data(data: &AchievementData) {
+    let path = match achievements_file_path() {
+        Some(p) => p,
+        None => {
+            log::warn!("无法获取配置目录路径，跳过保存成就数据");
+            return;
+        }
+    };
+    match serde_json::to_string_pretty(data) {
+        Ok(json) => {
+            let tmp_path = path.with_extension("json.tmp");
+            if let Err(e) = std::fs::write(&tmp_path, &json) {
+                log::warn!("写入成就数据临时文件失败: {e}");
+                return;
+            }
+            if let Err(e) = std::fs::rename(&tmp_path, &path) {
+                log::warn!("重命名成就数据文件失败: {e}");
+                let _ = std::fs::remove_file(&tmp_path);
+            } else {
+                log::debug!("成就数据已保存到 {:?}", path);
+            }
+        }
+        Err(e) => log::warn!("序列化成就数据失败: {e}"),
+    }
+}
+
+/// 全部成就定义（硬编码）
+/// 返回 (id, name, description, icon, target) 元组列表
+fn all_achievements() -> Vec<(&'static str, &'static str, &'static str, &'static str, u32)> {
+    vec![
+        ("first_import", "首次导入", "完成第一次一键导入", "rocket", 1),
+        ("card_master", "卡牌大师", "复制 10 张卡", "nfc", 10),
+        ("signal_hunter", "信号猎手", "捕获 5 个信号", "subghz", 5),
+        ("keyboard_warrior", "键盘侠", "运行 BadUSB 脚本", "badusb", 1),
+        ("flash_master", "刷机达人", "刷写 3 次固件", "wrench", 3),
+        ("graduate", "毕业", "完成全部课程", "dolphin", 7),
+        ("first_connect", "初次连接", "首次连接 Flipper Zero", "usb", 1),
+        ("mirror_master", "镜像大师", "使用屏幕镜像 10 次", "mirror", 10),
+        ("ai_scholar", "AI 学者", "与 AI 对话 100 次", "chip", 100),
+        ("collector", "收藏家", "导入全部 7 个资源包", "folder", 7),
+    ]
 }
 
 impl AppState {
@@ -189,6 +352,7 @@ impl AppState {
             cancel_flash_flag: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             cancel_import_flag: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             cancel_ai_chat_flag: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            achievements: parking_lot::Mutex::new(load_achievement_data()),
         }
     }
 }
@@ -266,6 +430,11 @@ async fn device_connect(
         dev.connection_state = device::DeviceConnectionState::Connecting;
     }
 
+    // M10: 尝试停止旧会话（如果存在），避免旧会话占用串口
+    if let Some(old_session) = state.rpc_session.lock().take() {
+        let _ = rpc::protocol::stop_session(&old_session);
+    }
+
     // 检查是否为虚拟设备
     if port_name == device::virtual_flipper::VIRTUAL_PORT_NAME {
         device::virtual_flipper::set_virtual(true);
@@ -314,8 +483,10 @@ async fn device_disconnect(state: State<'_, AppState>) -> Result<IpcVoid, String
     device::virtual_flipper::set_virtual(false);
     // 停止屏幕镜像（如果在运行）
     *state.screen_mirror_running.lock() = false;
-    // 关闭 RPC 会话
-    *state.rpc_session.lock() = None;
+    // M10: 尝试停止 RPC 会话（如果存在），再置空
+    if let Some(session) = state.rpc_session.lock().take() {
+        let _ = rpc::protocol::stop_session(&session);
+    }
     // 重置设备状态
     {
         let mut dev = state.device.lock();
@@ -469,21 +640,31 @@ async fn flash_firmware(
     let session_opt = state.rpc_session.lock().clone();
     let cancel_flag = state.cancel_flash_flag.clone();
 
-    match firmware::flasher::flash_firmware(
-        &firmware_id,
-        firmware_path.as_deref(),
-        session_opt.as_ref(),
-        |progress| {
-            // 检查取消标志
-            if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
-                return;
-            }
-            // 推送刷写进度事件（前端订阅 flash-progress）
-            let _ = app.emit("flash-progress", &progress);
-        },
-    ) {
+    // M6: 使用 spawn_blocking 将阻塞的刷写操作移出 tokio 运行时线程，避免阻塞异步任务
+    let result = tokio::task::spawn_blocking(move || {
+        // H4/M6: 传递 cancel_flag 给 flasher 内部，同时克隆一份给进度回调
+        let cancel_for_cb = cancel_flag.clone();
+        firmware::flasher::flash_firmware(
+            &firmware_id,
+            firmware_path.as_deref(),
+            session_opt.as_ref(),
+            Some(cancel_flag.as_ref()),
+            move |progress| {
+                // 检查取消标志
+                if cancel_for_cb.load(std::sync::atomic::Ordering::SeqCst) {
+                    return;
+                }
+                // 推送刷写进度事件（前端订阅 flash-progress）
+                let _ = app.emit("flash-progress", &progress);
+            },
+        )
+    })
+    .await
+    .map_err(|e| format!("刷写任务异常: {e}"))?;
+
+    match result {
         Ok(r) => {
-            if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+            if state.cancel_flash_flag.load(std::sync::atomic::Ordering::SeqCst) {
                 push_log(&state, "固件刷写已取消".to_string());
                 return Ok(IpcResult::err("固件刷写已取消"));
             }
@@ -503,7 +684,12 @@ async fn list_firmwares(
     _state: State<'_, AppState>,
 ) -> Result<IpcResult<Vec<firmware::FirmwareInfo>>, String> {
     log::info!("IPC: list_firmwares");
-    Ok(IpcResult::ok(firmware::flasher::list_firmwares()))
+    let result = tokio::task::spawn_blocking(|| {
+        firmware::flasher::list_firmwares()
+    })
+    .await
+    .map_err(|e| format!("获取固件列表失败: {e}"))?;
+    Ok(IpcResult::ok(result))
 }
 
 /// 进入 DFU 模式（通过 RPC 发送重启到 DFU 的命令）
@@ -551,6 +737,11 @@ async fn import_resources(
     log::info!("IPC: import_resources ids={:?}", package_ids);
     push_log(&state, format!("开始导入 {} 个资源包", package_ids.len()));
 
+    // H4: 重置取消标志
+    state
+        .cancel_import_flag
+        .store(false, std::sync::atomic::Ordering::SeqCst);
+
     // 虚拟设备模式：模拟导入流程，将文件写入虚拟文件系统
     if device::virtual_flipper::is_virtual() {
         return run_virtual_import(&state, &app, &package_ids);
@@ -561,16 +752,25 @@ async fn import_resources(
     // 克隆 Arc 以便在闭包中使用
     let progress_arc = state.import_progress.clone();
     let log_arc = state.log_buffer.clone();
+    // H4: 克隆取消标志以便在进度回调中检查，并传递给 pipeline
+    let cancel_flag = state.cancel_import_flag.clone();
+    let cancel_for_cb = cancel_flag.clone();
 
     match import::pipeline::run_import_pipeline(
         &package_ids,
         session_opt.as_ref(),
+        Some(cancel_flag.as_ref()),
         move |progress| {
+            // H4: 如果用户已请求取消，则跳过进度更新
+            if cancel_for_cb.load(std::sync::atomic::Ordering::SeqCst) {
+                return;
+            }
             // 更新全局进度状态
             *progress_arc.lock() = progress.clone();
             // 追加日志
             if !progress.log_lines.is_empty() {
-                let last = progress.log_lines.last().unwrap().clone();
+                // L1: 使用 cloned().unwrap_or_default() 避免 unwrap panic
+                let last = progress.log_lines.last().cloned().unwrap_or_default();
                 let mut buf = log_arc.lock();
                 if buf.len() >= 5000 {
                     buf.remove(0);
@@ -620,6 +820,17 @@ fn run_virtual_import(
     progress_cb(app, state, &progress);
 
     for (idx, pkg_id) in package_ids.iter().enumerate() {
+        // H4: 检查取消标志，用户请求取消时立即终止导入
+        if state
+            .cancel_import_flag
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
+            progress.phase = import::ImportPhase::Error;
+            progress.log("导入已取消".to_string());
+            progress_cb(app, state, &progress);
+            return Ok(IpcResult::err("导入已取消"));
+        }
+
         let pkg = match packages.iter().find(|p| &p.id == pkg_id) {
             Some(p) => p.clone(),
             None => {
@@ -644,11 +855,26 @@ fn run_virtual_import(
                 // 遍历目录
                 if let Ok(entries) = std::fs::read_dir(local_dir) {
                     for entry in entries.flatten() {
+                        // H4: 文件遍历循环中检查取消标志
+                        if state
+                            .cancel_import_flag
+                            .load(std::sync::atomic::Ordering::SeqCst)
+                        {
+                            progress.phase = import::ImportPhase::Error;
+                            progress.log("导入已取消".to_string());
+                            progress_cb(app, state, &progress);
+                            return Ok(IpcResult::err("导入已取消"));
+                        }
                         let path = entry.path();
                         if !path.is_file() {
                             continue;
                         }
-                        let filename = path.file_name().unwrap().to_string_lossy().to_string();
+                        // L1: 使用 and_then + unwrap_or 避免 unwrap panic
+                        let filename = path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown")
+                            .to_string();
                         let target_path = format!("{}/{}", pkg.target_path, filename);
 
                         // 读取文件内容
@@ -718,7 +944,8 @@ fn run_virtual_import(
 fn progress_cb(app: &tauri::AppHandle, state: &AppState, progress: &import::ImportProgress) {
     *state.import_progress.lock() = progress.clone();
     if !progress.log_lines.is_empty() {
-        let last = progress.log_lines.last().unwrap().clone();
+        // L1: 使用 cloned().unwrap_or_default() 避免 unwrap panic
+        let last = progress.log_lines.last().cloned().unwrap_or_default();
         let mut buf = state.log_buffer.lock();
         if buf.len() >= 5000 {
             buf.remove(0);
@@ -785,6 +1012,11 @@ async fn ai_chat_with_image(
     let config = state.ai_config.lock().clone();
     // 先对图片相关内容做脱敏检查
     let sanitized = ai::sanitizer::sanitize_messages(&messages);
+    // M4: 多模态图片未脱敏警告，提示用户图片以原始内容发送给模型
+    log::warn!(
+        "多模态对话：图片将以原始内容发送给 {}，请确保不含敏感信息",
+        config.provider.as_str()
+    );
     match ai::router::chat_with_image(&config, &sanitized, &image_base64).await {
         Ok(resp) => {
             push_log(&state, "AI 多模态回复完成");
@@ -848,6 +1080,12 @@ async fn start_screen_mirror(
     app: tauri::AppHandle,
 ) -> Result<IpcVoid, String> {
     log::info!("IPC: start_screen_mirror");
+
+    // M8: 检查是否已在运行，避免重复启动
+    if *state.screen_mirror_running.lock() {
+        log::warn!("屏幕镜像已在运行，跳过重复启动");
+        return Ok(ok_void());
+    }
 
     // 虚拟设备模式：生成虚拟屏幕帧
     if device::virtual_flipper::is_virtual() {
@@ -947,6 +1185,215 @@ async fn send_virtual_key(
             Err(e) => Ok(IpcResult::err(format!("发送按键失败: {e}"))),
         },
         None => Ok(IpcResult::err("设备未连接")),
+    }
+}
+
+// -------------------- GPIO 命令 --------------------
+
+/// GPIO 引脚状态（与前端 types/index.ts 中的 GpioPinState 对应）
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GpioPinState {
+    /// 引脚名称，如 "PC0" / "PC1" / "PC3" / "PB2" / "PB3" / "PA4" / "PA6" / "PA7"
+    pub pin: String,
+    /// 模式："output" | "input"
+    pub mode: String,
+    /// 上下拉："no" | "up" | "down"（RPC 协议无 GetInputPull，默认 "no"）
+    pub pull: String,
+    /// 电平值：0 或 1（OUTPUT 为写入值，INPUT 为读取值）
+    pub value: u32,
+}
+
+/// 获取所有 GPIO 引脚状态（遍历 8 个引脚，逐个查询模式与电平）
+///
+/// 虚拟设备模式返回模拟状态；真实设备模式通过 RPC 逐个查询 GetPinMode / ReadPin
+#[tauri::command]
+async fn gpio_get_all_pins(
+    state: State<'_, AppState>,
+) -> Result<IpcResult<Vec<GpioPinState>>, String> {
+    log::info!("IPC: gpio_get_all_pins");
+
+    // 虚拟设备模式：返回虚拟 GPIO 状态
+    if device::virtual_flipper::is_virtual() {
+        let pins = device::virtual_flipper::virtual_gpio_get_all();
+        let result: Vec<GpioPinState> = pins
+            .into_iter()
+            .map(|(name, mode, pull, value)| GpioPinState {
+                pin: name,
+                mode,
+                pull,
+                value,
+            })
+            .collect();
+        return Ok(IpcResult::ok(result));
+    }
+
+    // 真实设备：逐个查询 8 个引脚的模式与电平
+    let session_opt = state.rpc_session.lock().clone();
+    let session = match session_opt {
+        Some(s) => s,
+        None => return Ok(IpcResult::err("设备未连接，GPIO 功能需要设备连接")),
+    };
+
+    let mut pins = Vec::with_capacity(8);
+    for &name in rpc::protocol::GPIO_PIN_NAMES {
+        // 查询模式（失败时回退为 input）
+        let mode = rpc::protocol::gpio_get_pin_mode(&session, name).unwrap_or_else(|e| {
+            log::warn!("查询引脚 {} 模式失败: {}，默认 input", name, e);
+            "input".to_string()
+        });
+        // 读取电平（失败时回退为 0）
+        let value = rpc::protocol::gpio_read_pin(&session, name).unwrap_or_else(|e| {
+            log::warn!("读取引脚 {} 电平失败: {}，默认 0", name, e);
+            0
+        });
+        pins.push(GpioPinState {
+            pin: name.to_string(),
+            mode,
+            // RPC 协议无 GetInputPull 命令，统一默认 "no"
+            pull: "no".to_string(),
+            value,
+        });
+    }
+    push_log(
+        &state,
+        format!("GPIO: 已获取 {} 个引脚状态", pins.len()),
+    );
+    Ok(IpcResult::ok(pins))
+}
+
+/// 设置 GPIO 引脚模式（OUTPUT / INPUT）
+///
+/// 虚拟设备模式直接修改虚拟状态；真实设备模式通过 RPC GpioSetPinMode
+#[tauri::command]
+async fn gpio_set_pin_mode(
+    pin: String,
+    mode: String,
+    state: State<'_, AppState>,
+) -> Result<IpcVoid, String> {
+    log::info!("IPC: gpio_set_pin_mode pin={} mode={}", pin, mode);
+
+    // 虚拟设备模式
+    if device::virtual_flipper::is_virtual() {
+        if device::virtual_flipper::virtual_gpio_set_mode(&pin, &mode) {
+            return Ok(ok_void());
+        }
+        return Ok(IpcResult::err(format!("未知 GPIO 引脚或模式: {} {}", pin, mode)));
+    }
+
+    let session_opt = state.rpc_session.lock().clone();
+    match session_opt {
+        Some(session) => match rpc::protocol::gpio_set_pin_mode(&session, &pin, &mode) {
+            Ok(_) => {
+                push_log(&state, format!("GPIO: 设置 {} 模式为 {}", pin, mode));
+                Ok(ok_void())
+            }
+            Err(e) => Ok(IpcResult::err(format!("设置 GPIO 模式失败: {e}"))),
+        },
+        None => Ok(IpcResult::err("设备未连接，GPIO 功能需要设备连接")),
+    }
+}
+
+/// 写 GPIO 引脚电平值（仅 OUTPUT 模式有效）
+#[tauri::command]
+async fn gpio_write_pin(
+    pin: String,
+    value: u32,
+    state: State<'_, AppState>,
+) -> Result<IpcVoid, String> {
+    log::info!("IPC: gpio_write_pin pin={} value={}", pin, value);
+
+    // 虚拟设备模式
+    if device::virtual_flipper::is_virtual() {
+        if device::virtual_flipper::virtual_gpio_write_pin(&pin, value) {
+            return Ok(ok_void());
+        }
+        return Ok(IpcResult::err(format!("未知 GPIO 引脚: {}", pin)));
+    }
+
+    let session_opt = state.rpc_session.lock().clone();
+    match session_opt {
+        Some(session) => match rpc::protocol::gpio_write_pin(&session, &pin, value) {
+            Ok(_) => {
+                push_log(&state, format!("GPIO: 写 {} = {}", pin, value));
+                Ok(ok_void())
+            }
+            Err(e) => Ok(IpcResult::err(format!("写 GPIO 失败: {e}"))),
+        },
+        None => Ok(IpcResult::err("设备未连接，GPIO 功能需要设备连接")),
+    }
+}
+
+/// 读 GPIO 引脚电平值
+#[tauri::command]
+async fn gpio_read_pin(
+    pin: String,
+    state: State<'_, AppState>,
+) -> Result<IpcResult<u32>, String> {
+    log::info!("IPC: gpio_read_pin pin={}", pin);
+
+    // 虚拟设备模式
+    if device::virtual_flipper::is_virtual() {
+        return match device::virtual_flipper::virtual_gpio_read_pin(&pin) {
+            Some(v) => Ok(IpcResult::ok(v)),
+            None => Ok(IpcResult::err(format!("未知 GPIO 引脚: {}", pin))),
+        };
+    }
+
+    let session_opt = state.rpc_session.lock().clone();
+    match session_opt {
+        Some(session) => match rpc::protocol::gpio_read_pin(&session, &pin) {
+            Ok(v) => Ok(IpcResult::ok(v)),
+            Err(e) => Ok(IpcResult::err(format!("读 GPIO 失败: {e}"))),
+        },
+        None => Ok(IpcResult::err("设备未连接，GPIO 功能需要设备连接")),
+    }
+}
+
+/// 获取 OTG 模式（返回 "on" | "off"）
+#[tauri::command]
+async fn gpio_get_otg_mode(state: State<'_, AppState>) -> Result<IpcResult<String>, String> {
+    log::info!("IPC: gpio_get_otg_mode");
+
+    // 虚拟设备模式
+    if device::virtual_flipper::is_virtual() {
+        return Ok(IpcResult::ok(device::virtual_flipper::virtual_gpio_get_otg_mode()));
+    }
+
+    let session_opt = state.rpc_session.lock().clone();
+    match session_opt {
+        Some(session) => match rpc::protocol::gpio_get_otg_mode(&session) {
+            Ok(m) => Ok(IpcResult::ok(m)),
+            Err(e) => Ok(IpcResult::err(format!("获取 OTG 模式失败: {e}"))),
+        },
+        None => Ok(IpcResult::err("设备未连接，GPIO 功能需要设备连接")),
+    }
+}
+
+/// 设置 OTG 模式（"on" | "off"）
+#[tauri::command]
+async fn gpio_set_otg_mode(
+    mode: String,
+    state: State<'_, AppState>,
+) -> Result<IpcVoid, String> {
+    log::info!("IPC: gpio_set_otg_mode mode={}", mode);
+
+    // 虚拟设备模式
+    if device::virtual_flipper::is_virtual() {
+        device::virtual_flipper::virtual_gpio_set_otg_mode(&mode);
+        return Ok(ok_void());
+    }
+
+    let session_opt = state.rpc_session.lock().clone();
+    match session_opt {
+        Some(session) => match rpc::protocol::gpio_set_otg_mode(&session, &mode) {
+            Ok(_) => {
+                push_log(&state, format!("GPIO: OTG 模式设为 {}", mode));
+                Ok(ok_void())
+            }
+            Err(e) => Ok(IpcResult::err(format!("设置 OTG 模式失败: {e}"))),
+        },
+        None => Ok(IpcResult::err("设备未连接，GPIO 功能需要设备连接")),
     }
 }
 
@@ -1101,6 +1548,17 @@ async fn save_log_dump(
     file_path: String,
 ) -> Result<IpcResult<usize>, String> {
     log::info!("IPC: save_log_dump path={}", file_path);
+
+    // M2: 校验文件路径安全，防止任意文件写入
+    let path = std::path::Path::new(&file_path);
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if ext != "txt" && ext != "log" {
+        return Ok(IpcResult::err("仅支持导出 .txt 或 .log 文件"));
+    }
+    if file_path.contains("..") {
+        return Ok(IpcResult::err("路径不允许包含 .. "));
+    }
+
     let logs = state.log_buffer.lock().clone();
     let content = logs.join("\n");
     match std::fs::write(&file_path, &content) {
@@ -1110,6 +1568,90 @@ async fn save_log_dump(
         }
         Err(e) => Ok(IpcResult::err(format!("日志导出失败: {e}"))),
     }
+}
+
+// -------------------- 成就相关命令 --------------------
+
+/// 获取全部成就列表（含解锁状态和进度）
+/// 成就定义是硬编码的，解锁状态从 achievements.json 读取
+#[tauri::command]
+async fn get_achievements(
+    state: State<'_, AppState>,
+) -> Result<IpcResult<Vec<Achievement>>, String> {
+    log::info!("IPC: get_achievements");
+    let data = state.achievements.lock();
+    let list = all_achievements()
+        .into_iter()
+        .map(|(id, name, desc, icon, target)| {
+            let unlocked_at = data.unlocked.get(id).copied();
+            let progress = data.progress.get(id).copied().unwrap_or(0);
+            Achievement {
+                id: id.to_string(),
+                name: name.to_string(),
+                description: desc.to_string(),
+                icon: icon.to_string(),
+                unlocked: unlocked_at.is_some(),
+                unlocked_at,
+                progress,
+                target,
+            }
+        })
+        .collect();
+    Ok(IpcResult::ok(list))
+}
+
+/// 解锁指定成就（写入 achievements.json）
+/// 返回 true 表示新解锁，false 表示已解锁
+#[tauri::command]
+async fn unlock_achievement(
+    id: String,
+    state: State<'_, AppState>,
+) -> Result<IpcResult<bool>, String> {
+    log::info!("IPC: unlock_achievement id={}", id);
+    let mut data = state.achievements.lock();
+    if data.unlocked.contains_key(&id) {
+        // 已解锁，直接返回 false
+        return Ok(IpcResult::ok(false));
+    }
+    data.unlocked.insert(id, now_unix_secs());
+    save_achievement_data(&data);
+    Ok(IpcResult::ok(true))
+}
+
+/// 更新成就进度，达到 target 时自动解锁
+/// 返回是否刚刚解锁
+#[tauri::command]
+async fn update_achievement_progress(
+    id: String,
+    progress: u32,
+    state: State<'_, AppState>,
+) -> Result<IpcResult<bool>, String> {
+    log::info!(
+        "IPC: update_achievement_progress id={} progress={}",
+        id,
+        progress
+    );
+    let mut data = state.achievements.lock();
+    // 已解锁的成就不再更新进度
+    if data.unlocked.contains_key(&id) {
+        return Ok(IpcResult::ok(false));
+    }
+    // 更新进度
+    data.progress.insert(id.clone(), progress);
+    // 查找该成就的 target，达到则自动解锁
+    let target = all_achievements()
+        .into_iter()
+        .find(|(aid, _, _, _, _)| *aid == id)
+        .map(|(_, _, _, _, t)| t);
+    let just_unlocked = match target {
+        Some(t) if t > 0 && progress >= t => {
+            data.unlocked.insert(id, now_unix_secs());
+            true
+        }
+        _ => false,
+    };
+    save_achievement_data(&data);
+    Ok(IpcResult::ok(just_unlocked))
 }
 
 // =============================================================================
@@ -1124,7 +1666,7 @@ pub fn run() {
         .format_timestamp_secs()
         .init();
 
-    log::info!("FlipperZero AI Tutor 后端启动中...");
+    log::info!("DolphinTutor 后端启动中...");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -1169,8 +1711,19 @@ pub fn run() {
             start_screen_mirror,
             stop_screen_mirror,
             send_virtual_key,
+            // GPIO
+            gpio_get_all_pins,
+            gpio_set_pin_mode,
+            gpio_write_pin,
+            gpio_read_pin,
+            gpio_get_otg_mode,
+            gpio_set_otg_mode,
             // 日志
             save_log_dump,
+            // 成就
+            get_achievements,
+            unlock_achievement,
+            update_achievement_progress,
         ])
         .run(tauri::generate_context!())
         .expect("Tauri 应用启动失败");

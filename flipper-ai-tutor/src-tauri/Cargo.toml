@@ -1,8 +1,8 @@
 [package]
 name = "flipper-ai-tutor"
 version = "1.0.0"
-description = "FlipperZero AI 小白助手"
-authors = ["FlipperAI"]
+description = "DolphinTutor - 适配 Flipper Zero 的桌面伴侣应用"
+authors = ["DolphinTutor"]
 edition = "2021"
 
 [lib]
@@ -62,9 +62,13 @@ chrono = { version = "0.4", features = ["serde"] }
 # 资源打包 / 解压
 tar = "0.4"
 flate2 = "1.0"
+zip = "2.2"
 
 # 正则（脱敏 / 日志解析）
 regex = "1.10"
+
+# URL 解析（API URL 安全校验，防 SSRF）
+url = "2.5"
 
 # Base64 编解码（图片传输）
 base64 = "0.22"
@@ -72,9 +76,20 @@ base64 = "0.22"
 # 字节缓冲
 bytes = "1.7"
 
+# 系统钥匙串（API Key 安全存储）
+keyring = "3"
+
 # 平台特定依赖（条件编译）
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Foundation"] }
+windows = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Foundation"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
+# Release 优化配置：减小体积 + 剥离符号
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = "symbols"
+panic = "abort"

@@ -33,6 +33,8 @@ import type {
   FlashProgress,
   ScreenMirrorFrame,
   DiagnosticResult,
+  GpioPinState,
+  Achievement,
 } from "@/types";
 
 // ================================================================
@@ -193,6 +195,20 @@ const MOCK_AI_RESPONSES: string[] = [
   "安全提醒：请仅在你拥有合法权限的设备上进行操作。未经授权复制门禁卡、截获信号等行为可能违法。Flipper Zero 是为安全研究和学习设计的工具，请合法合规使用。",
 ];
 
+/** 模拟 GPIO 引脚状态（8 个引脚，默认全 INPUT，值全 0） */
+const MOCK_GPIO_PINS: GpioPinState[] = [
+  { pin: "PC0", mode: "input", pull: "no", value: 0 },
+  { pin: "PC1", mode: "input", pull: "no", value: 0 },
+  { pin: "PC3", mode: "input", pull: "no", value: 0 },
+  { pin: "PB2", mode: "input", pull: "no", value: 0 },
+  { pin: "PB3", mode: "input", pull: "no", value: 0 },
+  { pin: "PA4", mode: "input", pull: "no", value: 0 },
+  { pin: "PA6", mode: "input", pull: "no", value: 0 },
+  { pin: "PA7", mode: "input", pull: "no", value: 0 },
+];
+/** 模拟 OTG 模式 */
+let mockOtgMode = "off";
+
 // ================================================================
 // 第五部分：工具函数
 // ================================================================
@@ -227,7 +243,11 @@ async function safeInvoke<T>(
   args?: Record<string, unknown>
 ): Promise<IpcResult<T>> {
   if (!isTauri()) {
-    return mockInvoke<T>(cmd, args);
+    // 仅在开发环境下使用 mock，生产环境直接返回错误
+    if (import.meta.env.DEV) {
+      return mockInvoke<T>(cmd, args);
+    }
+    return { success: false, error: "此功能需要在 Tauri 桌面环境中运行" };
   }
   try {
     const data = await invoke<T>(cmd, args);
@@ -474,6 +494,67 @@ export function saveLogDump(filePath: string): Promise<IpcResult<number>> {
 }
 
 // ================================================================
+// GPIO 命令
+// 对应后端: gpio_get_all_pins / gpio_set_pin_mode / gpio_write_pin / gpio_read_pin / gpio_get_otg_mode / gpio_set_otg_mode
+// ================================================================
+
+/** GPIO - 获取所有引脚状态（8 个引脚的模式与电平） */
+export function gpioGetAllPins(): Promise<IpcResult<GpioPinState[]>> {
+  return safeInvoke<GpioPinState[]>("gpio_get_all_pins");
+}
+
+/** GPIO - 设置引脚模式（output / input） */
+export function gpioSetPinMode(
+  pin: string,
+  mode: "output" | "input"
+): Promise<IpcResult<null>> {
+  return safeInvoke<null>("gpio_set_pin_mode", { pin, mode });
+}
+
+/** GPIO - 写引脚值（仅 OUTPUT 模式，value 0 或 1） */
+export function gpioWritePin(pin: string, value: number): Promise<IpcResult<null>> {
+  return safeInvoke<null>("gpio_write_pin", { pin, value });
+}
+
+/** GPIO - 读引脚值 */
+export function gpioReadPin(pin: string): Promise<IpcResult<number>> {
+  return safeInvoke<number>("gpio_read_pin", { pin });
+}
+
+/** GPIO - 获取 OTG 模式（"on" | "off"） */
+export function gpioGetOtgMode(): Promise<IpcResult<string>> {
+  return safeInvoke<string>("gpio_get_otg_mode");
+}
+
+/** GPIO - 设置 OTG 模式（"on" | "off"） */
+export function gpioSetOtgMode(mode: string): Promise<IpcResult<null>> {
+  return safeInvoke<null>("gpio_set_otg_mode", { mode });
+}
+
+// ================================================================
+// 第十四部分之二：成就命令
+// 对应后端: get_achievements / unlock_achievement / update_achievement_progress
+// ================================================================
+
+/** 获取全部成就列表 */
+export function getAchievements(): Promise<IpcResult<Achievement[]>> {
+  return safeInvoke<Achievement[]>("get_achievements");
+}
+
+/** 解锁成就 */
+export function unlockAchievement(id: string): Promise<IpcResult<boolean>> {
+  return safeInvoke<boolean>("unlock_achievement", { id });
+}
+
+/** 更新成就进度 */
+export function updateAchievementProgress(
+  id: string,
+  progress: number
+): Promise<IpcResult<boolean>> {
+  return safeInvoke<boolean>("update_achievement_progress", { id, progress });
+}
+
+// ================================================================
 // 第十五部分：事件监听辅助函数
 // ================================================================
 
@@ -625,7 +706,6 @@ async function mockInvoke<T>(
       return { success: true, data: null as T };
 
     case "list_firmwares": {
-      // Mock: 返回与后端 flasher.rs 一致的 4 个固件
       return { success: true, data: MOCK_FIRMWARES as T };
     }
 
@@ -634,7 +714,6 @@ async function mockInvoke<T>(
 
     // ---------- 资源导入 ----------
     case "list_resource_packages": {
-      // Mock: 返回与后端 pipeline.rs 一致的 5 个资源包
       return { success: true, data: MOCK_RESOURCE_PACKAGES as T };
     }
 
@@ -784,6 +863,78 @@ async function mockInvoke<T>(
     // ---------- 日志 ----------
     case "save_log_dump":
       return { success: true, data: 0 as T };
+
+    // ---------- GPIO ----------
+    case "gpio_get_all_pins":
+      return { success: true, data: MOCK_GPIO_PINS.map((p) => ({ ...p })) as T };
+
+    case "gpio_set_pin_mode": {
+      const pinName = (args?.pin as string) ?? "";
+      const mode = (args?.mode as string) ?? "input";
+      const found = MOCK_GPIO_PINS.find((p) => p.pin === pinName);
+      if (found) {
+        found.mode = mode as "output" | "input";
+        // 切回 INPUT 时清零电平（与真实设备读取行为一致）
+        if (mode === "input") found.value = 0;
+        return { success: true, data: null as T };
+      }
+      return { success: false, error: `未知 GPIO 引脚: ${pinName}` };
+    }
+
+    case "gpio_write_pin": {
+      const pinName = (args?.pin as string) ?? "";
+      const value = (args?.value as number) ?? 0;
+      const found = MOCK_GPIO_PINS.find((p) => p.pin === pinName);
+      if (found) {
+        found.value = value ? 1 : 0;
+        return { success: true, data: null as T };
+      }
+      return { success: false, error: `未知 GPIO 引脚: ${pinName}` };
+    }
+
+    case "gpio_read_pin": {
+      const pinName = (args?.pin as string) ?? "";
+      const found = MOCK_GPIO_PINS.find((p) => p.pin === pinName);
+      if (found) {
+        return { success: true, data: found.value as T };
+      }
+      return { success: false, error: `未知 GPIO 引脚: ${pinName}` };
+    }
+
+    case "gpio_get_otg_mode":
+      return { success: true, data: mockOtgMode as T };
+
+    case "gpio_set_otg_mode": {
+      const mode = (args?.mode as string) ?? "off";
+      mockOtgMode = mode === "on" ? "on" : "off";
+      return { success: true, data: null as T };
+    }
+
+    // ---------- 成就 ----------
+    case "get_achievements": {
+      const now = Math.floor(Date.now() / 1000);
+      const list: Achievement[] = [
+        { id: "first_import", name: "首次导入", description: "完成第一次一键导入", icon: "rocket", unlocked: true, unlockedAt: now - 3600, progress: 1, target: 1 },
+        { id: "card_master", name: "卡牌大师", description: "复制 10 张卡", icon: "nfc", unlocked: false, unlockedAt: null, progress: 3, target: 10 },
+        { id: "signal_hunter", name: "信号猎手", description: "捕获 5 个信号", icon: "subghz", unlocked: false, unlockedAt: null, progress: 0, target: 5 },
+        { id: "keyboard_warrior", name: "键盘侠", description: "运行 BadUSB 脚本", icon: "badusb", unlocked: false, unlockedAt: null, progress: 0, target: 1 },
+        { id: "flash_master", name: "刷机达人", description: "刷写 3 次固件", icon: "wrench", unlocked: false, unlockedAt: null, progress: 1, target: 3 },
+        { id: "graduate", name: "毕业", description: "完成全部课程", icon: "dolphin", unlocked: false, unlockedAt: null, progress: 2, target: 7 },
+        { id: "first_connect", name: "初次连接", description: "首次连接 Flipper Zero", icon: "usb", unlocked: true, unlockedAt: now - 7200, progress: 1, target: 1 },
+        { id: "mirror_master", name: "镜像大师", description: "使用屏幕镜像 10 次", icon: "mirror", unlocked: false, unlockedAt: null, progress: 4, target: 10 },
+        { id: "ai_scholar", name: "AI 学者", description: "与 AI 对话 100 次", icon: "chip", unlocked: false, unlockedAt: null, progress: 12, target: 100 },
+        { id: "collector", name: "收藏家", description: "导入全部 7 个资源包", icon: "folder", unlocked: false, unlockedAt: null, progress: 2, target: 7 },
+      ];
+      return { success: true, data: list as T };
+    }
+
+    case "unlock_achievement":
+      // Mock: 始终返回新解锁
+      return { success: true, data: true as T };
+
+    case "update_achievement_progress":
+      // Mock: 进度未达目标，返回未解锁
+      return { success: true, data: false as T };
 
     default:
       console.warn(`[Mock] 未知命令: ${cmd}`);

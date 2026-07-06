@@ -64,6 +64,10 @@ export const TitleBar: React.FC = () => {
         >
           FLIPPER AI TUTOR v1.0
         </h1>
+        {/* 非官方产品声明 */}
+        <span style={{ fontSize: 10, color: "var(--c-dim)", marginLeft: 8 }}>
+          非官方 · 与 Flipper Devices Inc. 无关联
+        </span>
       </div>
 
       {/* 右侧：连接状态 + USB 信息 */}

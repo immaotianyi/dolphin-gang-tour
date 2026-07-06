@@ -47,8 +47,8 @@ export const MOCK_RESOURCE_PACKAGES: ResourcePackage[] = [
   },
   {
     id: "games-pack",
-    name: "游戏合集（需自行下载）",
-    description: "FlipperZero 游戏为 .fap 二进制格式，请从 lab.flipper.net 应用目录下载后放入设备",
+    name: "游戏合集",
+    description: "6 款经典游戏（需运行 download.sh 下载 .fap 文件）",
     category: "games",
     sizeBytes: 0,
     fileCount: 0,
@@ -59,8 +59,8 @@ export const MOCK_RESOURCE_PACKAGES: ResourcePackage[] = [
   },
   {
     id: "themes-pack",
-    name: "主题包（需 Momentum Asset Pack）",
-    description: "主题需通过 Momentum 固件 Asset Pack 系统安装，详见 README",
+    name: "主题包（需运行 download.sh 下载）",
+    description: "Psyduck + WatchDogs 主题（需运行 download.sh 下载）",
     category: "themes",
     sizeBytes: 0,
     fileCount: 0,

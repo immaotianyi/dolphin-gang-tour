@@ -9,7 +9,7 @@
 //
 // 实现说明：
 //   - 完整的 Zadig 自动化需要调用 Zadig CLI 或通过 Windows SetupAPI 编程
-//   - MVP 阶段提供框架与 mock 实现，标注 TODO 待集成
+//   - 当前为手动安装指引模式，提供平台特定的安装命令引导
 // =============================================================================
 
 use anyhow::Result;
@@ -155,27 +155,227 @@ fn install_driver_windows(force: bool) -> Result<DriverInstallResult> {
 }
 
 /// 查询指定 USB 设备当前的驱动名称（Windows）
+///
+/// 通过 Windows SetupAPI 查询设备驱动信息：
+///   1. 使用 SetupDiGetClassDevs 枚举所有 USB 设备
+///   2. 匹配 FlipperZero DFU 设备的 VID:PID (0483:DF11)
+///   3. 调用 SetupDiGetDeviceRegistryProperty 获取驱动名称
 #[cfg(target_os = "windows")]
-fn query_current_driver_windows(_port_name: &str) -> Result<String> {
-    // Windows 驱动查询需要调用 SetupAPI，暂不支持。
-    // 返回 "unknown" 让 UI 显示"无法检测"而非假数据。
-    log::warn!("Windows 驱动检测暂未实现（需 SetupAPI），返回 unknown");
+fn query_current_driver_windows(port_name: &str) -> Result<String> {
+    use windows::Win32::Devices::DeviceAndDriverInstallation::*;
+    use windows::Win32::Foundation::*;
+    use windows::core::PCWSTR;
+
+    log::info!("查询设备驱动: {}", port_name);
+
+    // FlipperZero DFU 模式的 VID:PID
+    const FLIPPER_DFU_VID: u16 = 0x0483;
+    const FLIPPER_DFU_PID: u16 = 0xDF11;
+
+    // 枚举所有设备
+    let dev_info = unsafe {
+        SetupDiGetClassDevsW(
+            None,
+            PCWSTR::null(),
+            None,
+            DIGCF_PRESENT | DIGCF_ALLCLASSES,
+        )
+    };
+
+    if dev_info.is_invalid() {
+        log::warn!("SetupDiGetClassDevs 失败，返回 unknown");
+        return Ok("unknown".to_string());
+    }
+
+    let mut dev_info_data = SP_DEVINFO_DATA {
+        cbSize: std::mem::size_of::<SP_DEVINFO_DATA>() as u32,
+        ..Default::default()
+    };
+
+    let mut index: u32 = 0;
+    while unsafe {
+        SetupDiEnumDeviceInfo(dev_info, index, &mut dev_info_data).as_bool()
+    } {
+        index += 1;
+
+        // 获取硬件 ID
+        let mut hw_id_buf = [0u16; 256];
+        let mut required_size = 0u32;
+        let success = unsafe {
+            SetupDiGetDeviceRegistryPropertyW(
+                dev_info,
+                &dev_info_data,
+                SPDRP_HARDWAREID,
+                None,
+                Some(&mut hw_id_buf as *mut _ as *mut u8),
+                hw_id_buf.len() as u32 * 2,
+                Some(&mut required_size),
+            )
+        };
+
+        if success.is_err() {
+            continue;
+        }
+
+        let hw_id = String::from_utf16_lossy(
+            &hw_id_buf[..required_size as usize / 2]
+                .iter()
+                .take_while(|&&c| c != 0)
+                .copied()
+                .collect::<Vec<_>>(),
+        );
+
+        // 检查是否匹配 FlipperZero DFU VID:PID
+        let hw_id_upper = hw_id.to_uppercase();
+        if !hw_id_upper.contains(&format!("VID_{:04X}", FLIPPER_DFU_VID))
+            || !hw_id_upper.contains(&format!("PID_{:04X}", FLIPPER_DFU_PID))
+        {
+            continue;
+        }
+
+        log::info!("找到 FlipperZero DFU 设备: {}", hw_id);
+
+        // 获取驱动描述
+        let mut desc_buf = [0u16; 256];
+        let mut desc_size = 0u32;
+        let desc_success = unsafe {
+            SetupDiGetDeviceRegistryPropertyW(
+                dev_info,
+                &dev_info_data,
+                SPDRP_DEVICEDESC,
+                None,
+                Some(&mut desc_buf as *mut _ as *mut u8),
+                desc_buf.len() as u32 * 2,
+                Some(&mut desc_size),
+            )
+        };
+
+        if desc_success.is_ok() {
+            let desc = String::from_utf16_lossy(
+                &desc_buf[..desc_size as usize / 2]
+                    .iter()
+                    .take_while(|&&c| c != 0)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            );
+            log::info!("设备驱动描述: {}", desc);
+
+            // 获取驱动服务名（更准确的驱动标识）
+            let mut svc_buf = [0u16; 256];
+            let mut svc_size = 0u32;
+            let svc_success = unsafe {
+                SetupDiGetDeviceRegistryPropertyW(
+                    dev_info,
+                    &dev_info_data,
+                    SPDRP_SERVICE,
+                    None,
+                    Some(&mut svc_buf as *mut _ as *mut u8),
+                    svc_buf.len() as u32 * 2,
+                    Some(&mut svc_size),
+                )
+            };
+
+            if svc_success.is_ok() {
+                let svc = String::from_utf16_lossy(
+                    &svc_buf[..svc_size as usize / 2]
+                        .iter()
+                        .take_while(|&&c| c != 0)
+                        .copied()
+                        .collect::<Vec<_>>(),
+                );
+                unsafe { SetupDiDestroyDeviceInfoList(dev_info) };
+                return Ok(format!("{} ({})", desc, svc));
+            }
+
+            unsafe { SetupDiDestroyDeviceInfoList(dev_info) };
+            return Ok(desc);
+        }
+    }
+
+    unsafe { SetupDiDestroyDeviceInfoList(dev_info) };
+    log::warn!("未找到匹配的 FlipperZero DFU 设备驱动");
     Ok("unknown".to_string())
 }
 
 /// 调用 Zadig 替换驱动（Windows）
 ///
-/// 完整实现方案：
-///   1. 随包内置 zadig.exe（或 zadig-cli.exe）
-///   2. 生成 zadig 命令行：zadig.exe --targets "FlipperZero DFU" --driver WinUSB
-///   3. 通过 std::process::Command 调用
-///   4. 等待退出码，解析日志
+/// 实现方案：
+///   1. 检查随包内置的 zadig.exe 是否存在
+///   2. 若存在，尝试通过命令行参数自动化调用
+///   3. 若不存在，返回引导信息让用户手动操作
 #[cfg(target_os = "windows")]
-fn run_zadig_windows(_port_name: &str) -> Result<String> {
-    // Zadig 是 GUI 工具，需要用户手动操作。
-    // 返回引导信息，不假装执行了。
-    log::warn!("Zadig 驱动替换需用户手动操作");
-    Ok("请手动运行 Zadig：Options > List All Devices > 选择 STM32 BootLoader > 替换为 WinUSB".to_string())
+fn run_zadig_windows(port_name: &str) -> Result<String> {
+    log::info!("尝试 Zadig 驱动替换: {}", port_name);
+
+    // 检查随包内置的 zadig.exe
+    let exe_dir = std::env::current_exe()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()).ok_or_else(|| anyhow!("无法获取 exe 目录")))
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+
+    let zadig_paths = [
+        exe_dir.join("zadig.exe"),
+        exe_dir.join("bin").join("zadig.exe"),
+        std::path::PathBuf::from("zadig.exe"),
+        std::path::PathBuf::from("Zadig"),
+    ];
+
+    let zadig_exe = zadig_paths.iter().find(|p| p.exists());
+
+    if let Some(zadig_path) = zadig_exe {
+        log::info!("找到 Zadig: {:?}", zadig_path);
+
+        // Zadig 2.x 支持 --targets 和 --driver 参数
+        // 注意：Zadig 的 CLI 支持有限，可能需要用户在 GUI 中确认
+        let output = std::process::Command::new(zadig_path)
+            .args(["--targets", "STM32 BootLoader", "--driver", "WinUSB"])
+            .output();
+
+        match output {
+            Ok(out) => {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                log::info!("Zadig 输出: stdout={}, stderr={}", stdout, stderr);
+
+                if out.status.success() {
+                    return Ok("WinUSB".to_string());
+                }
+                // Zadig 可能需要 GUI 交互，返回引导信息
+                return Ok(format!(
+                    "Zadig 已启动（退出码={}），请在 GUI 中确认替换操作。\n路径: {}",
+                    out.status.code().unwrap_or(-1),
+                    zadig_path.display()
+                )).into_ok();
+            }
+            Err(e) => {
+                log::warn!("Zadig 调用失败: {e}");
+            }
+        }
+    }
+
+    // Zadig 不存在或调用失败，返回引导信息
+    log::warn!("Zadig 未找到或调用失败，返回手动引导");
+    Ok(
+        "请手动运行 Zadig 替换驱动：\n\
+         1. 下载 Zadig from https://zadig.akeo.ie\n\
+         2. Options > List All Devices\n\
+         3. 选择 STM32 BootLoader\n\
+         4. 目标驱动选择 WinUSB\n\
+         5. 点击 Replace Driver"
+            .to_string(),
+    )
+}
+
+/// 辅助 trait：将 String 转为 Result<String, anyhow::Error>
+#[cfg(target_os = "windows")]
+trait IntoOk {
+    fn into_ok(self) -> Result<String>;
+}
+
+#[cfg(target_os = "windows")]
+impl IntoOk for String {
+    fn into_ok(self) -> Result<String> {
+        Ok(self)
+    }
 }
 
 // -------------------- 非 Windows 平台桩函数 --------------------

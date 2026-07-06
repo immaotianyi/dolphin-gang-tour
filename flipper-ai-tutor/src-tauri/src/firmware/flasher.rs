@@ -32,6 +32,38 @@ use std::io::Read;
 use std::path::Path;
 use std::time::Instant;
 
+// -------------------- 临时文件守卫与取消检查 --------------------
+
+/// 临时文件守卫：Drop 时自动删除指定文件（用于清理解压出的临时 dfu 文件）
+struct TempFileGuard {
+    path: Option<String>,
+}
+
+impl TempFileGuard {
+    fn new(path: Option<String>) -> Self {
+        Self { path }
+    }
+}
+
+impl Drop for TempFileGuard {
+    fn drop(&mut self) {
+        if let Some(p) = &self.path {
+            log::debug!("清理临时文件: {}", p);
+            let _ = std::fs::remove_file(p);
+        }
+    }
+}
+
+/// 检查取消标志，如已取消则返回错误
+fn check_cancelled(cancel_flag: Option<&std::sync::atomic::AtomicBool>) -> Result<()> {
+    if let Some(flag) = cancel_flag {
+        if flag.load(std::sync::atomic::Ordering::SeqCst) {
+            bail!("刷写已取消");
+        }
+    }
+    Ok(())
+}
+
 // -------------------- 固件列表 --------------------
 
 /// 获取可用固件列表
@@ -135,7 +167,7 @@ fn fetch_latest_firmware_versions() -> Result<std::collections::HashMap<String, 
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
-        .user_agent("FlipperAI-Tutor/1.0")
+        .user_agent("DolphinTutor/1.0")
         .build()
         .map_err(|e| anyhow!("创建 HTTP 客户端失败: {e}"))?;
 
@@ -204,6 +236,7 @@ pub fn flash_firmware<F>(
     firmware_id: &str,
     firmware_path: Option<&str>,
     session: Option<&RpcSession>,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
     progress_cb: F,
 ) -> Result<FlashResult>
 where
@@ -223,8 +256,8 @@ where
     };
 
     let result = match session {
-        Some(s) => flash_via_rpc(s, firmware_id, firmware_path, &progress_cb),
-        None => flash_via_dfu(firmware_id, firmware_path, &progress_cb),
+        Some(s) => flash_via_rpc(s, firmware_id, firmware_path, cancel_flag, &progress_cb),
+        None => flash_via_dfu(firmware_id, firmware_path, cancel_flag, &progress_cb),
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -271,6 +304,7 @@ fn flash_via_rpc<F>(
     session: &RpcSession,
     firmware_id: &str,
     firmware_path: Option<&str>,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
     progress_cb: &F,
 ) -> Result<()>
 where
@@ -346,7 +380,7 @@ where
     });
 
     // 轮询等待设备重新出现（最多 60 秒）
-    let port_name = wait_for_device_reconnect(&original_port, 60)?;
+    let port_name = wait_for_device_reconnect(&original_port, 60, cancel_flag)?;
 
     // 阶段 5：验证固件版本
     progress_cb(FlashProgress {
@@ -422,6 +456,7 @@ where
 fn flash_via_dfu<F>(
     firmware_id: &str,
     firmware_path: Option<&str>,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
     progress_cb: &F,
 ) -> Result<()>
 where
@@ -438,6 +473,10 @@ where
     });
 
     let dfu_path = prepare_dfu_file(firmware_id, firmware_path, progress_cb)?;
+    // 仅当 dfu 文件为从压缩包提取的临时文件时，才在函数结束时清理
+    // （用户直接提供的 .dfu 文件不应被删除）
+    let is_temp = firmware_path.map_or(true, |p| p != dfu_path.as_str());
+    let _dfu_guard = TempFileGuard::new(if is_temp { Some(dfu_path.clone()) } else { None });
 
     // 阶段 2：校验 Manifest API Level
     progress_cb(FlashProgress {
@@ -480,7 +519,7 @@ where
         error_message: None,
     });
 
-    run_dfu_util(&dfu_path, progress_cb)?;
+    run_dfu_util(&dfu_path, cancel_flag, progress_cb)?;
 
     // 阶段 5：等待重启
     progress_cb(FlashProgress {
@@ -584,7 +623,8 @@ fn extract_dfu_from_archive(archive_path: &str) -> Result<String> {
     }
 
     let tmp_dir = std::env::temp_dir();
-    let dfu_output = tmp_dir.join("flipper_firmware.dfu");
+    // 使用含进程 ID 的唯一文件名，避免并发刷写时互相覆盖（M9）
+    let dfu_output = tmp_dir.join(format!("flipper_firmware_{}.dfu", std::process::id()));
 
     // 根据扩展名选择解压方式
     let ext = path
@@ -612,33 +652,23 @@ fn extract_dfu_from_archive(archive_path: &str) -> Result<String> {
         }
         bail!("tar.gz 包中未找到 .dfu 文件");
     } else if is_zip {
-        // zip 解压 — 需要读取 zip 文件
-        // 注：当前 Cargo.toml 可能没有 zip crate，使用简单方式：
-        // 尝试用系统 unzip 命令
-        let output = std::process::Command::new("unzip")
-            .arg("-o")
-            .arg("-j") // junk paths
-            .arg(archive_path)
-            .arg("*.dfu")
-            .arg("-d")
-            .arg(&tmp_dir)
-            .output()
-            .map_err(|e| anyhow!("调用 unzip 失败: {e}（请确保系统已安装 unzip）"))?;
+        // zip 解压 — 使用 zip crate（避免依赖外部 unzip 命令，消除命令注入与依赖风险，L3）
+        let file = std::fs::File::open(path)
+            .map_err(|e| anyhow!("打开 zip 文件失败: {e}"))?;
+        let mut archive = zip::ZipArchive::new(file)
+            .map_err(|e| anyhow!("读取 zip 归档失败: {e}"))?;
 
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            bail!("unzip 解压失败: {stderr}");
-        }
-
-        if dfu_output.exists() {
-            return Ok(dfu_output.to_string_lossy().to_string());
-        }
-
-        // 查找临时目录下任何 .dfu 文件
-        for entry in std::fs::read_dir(&tmp_dir)? {
-            let entry = entry?;
-            if entry.path().extension().and_then(|e| e.to_str()) == Some("dfu") {
-                return Ok(entry.path().to_string_lossy().to_string());
+        for i in 0..archive.len() {
+            let mut entry = archive
+                .by_index(i)
+                .map_err(|e| anyhow!("读取 zip 条目失败: {e}"))?;
+            let name = entry.name().to_string();
+            if name.ends_with(".dfu") {
+                let mut dfu_file = std::fs::File::create(&dfu_output)
+                    .map_err(|e| anyhow!("创建临时 dfu 文件失败: {e}"))?;
+                std::io::copy(&mut entry, &mut dfu_file)
+                    .map_err(|e| anyhow!("写入 dfu 文件失败: {e}"))?;
+                return Ok(dfu_output.to_string_lossy().to_string());
             }
         }
         bail!("zip 包中未找到 .dfu 文件");
@@ -885,7 +915,11 @@ fn wait_for_dfu_device() -> Result<String> {
 ///
 /// 进度解析：dfu-util 向 stderr 输出进度（如 "100%\r"），
 /// 使用 spawn + Stdio::piped() 实时读取 stderr 解析百分比。
-fn run_dfu_util<F>(dfu_path: &str, progress_cb: &F) -> Result<()>
+fn run_dfu_util<F>(
+    dfu_path: &str,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
+    progress_cb: &F,
+) -> Result<()>
 where
     F: Fn(FlashProgress),
 {
@@ -896,12 +930,13 @@ where
     log::info!("dfu-util 路径: {}", dfu_util_path);
 
     // 使用 spawn 而非 output，实时读取 stderr 进度
+    // stdout 不需要，丢弃以避免管道缓冲区写满导致 dfu-util 阻塞（M7）
     let mut child = std::process::Command::new(&dfu_util_path)
         .arg("-a").arg("0")
         .arg("-s").arg("0x08000000:leave")
         .arg("-D").arg(dfu_path)
         .stderr(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
         .spawn()
         .map_err(|e| anyhow!("调用 dfu-util 失败: {e}"))?;
 
@@ -912,6 +947,13 @@ where
     let reader = BufReader::new(stderr);
 
     for line_result in reader.lines() {
+        // 每行检查取消标志：为 true 时终止子进程并返回错误（H5）
+        if let Some(flag) = cancel_flag {
+            if flag.load(std::sync::atomic::Ordering::SeqCst) {
+                let _ = child.kill();
+                bail!("刷写已取消");
+            }
+        }
         match line_result {
             Ok(line) => {
                 log::debug!("dfu-util: {}", line);
@@ -968,6 +1010,12 @@ fn which_dfu_util() -> Result<String> {
             if output.status.success() {
                 let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
                 if !path.is_empty() {
+                    // L2：从 PATH 找到 dfu-util 时打印完整路径供用户确认，
+                    // 提醒优先使用随包内置版本以降低 PATH 劫持风险
+                    log::warn!(
+                        "使用系统 PATH 中的 dfu-util: {}（建议使用随包内置版本以确保安全性）",
+                        path
+                    );
                     return Ok(path);
                 }
             }
@@ -1009,7 +1057,11 @@ fn get_bundled_dfu_util_path() -> std::path::PathBuf {
 ///
 /// 每 3 秒扫描一次串口，检测原端口是否重新出现。
 /// 超时则返回错误。
-fn wait_for_device_reconnect(original_port: &str, timeout_secs: u64) -> Result<String> {
+fn wait_for_device_reconnect(
+    original_port: &str,
+    timeout_secs: u64,
+    cancel_flag: Option<&std::sync::atomic::AtomicBool>,
+) -> Result<String> {
     log::info!(
         "等待设备重连: 端口={} 超时={}s",
         original_port,
@@ -1023,6 +1075,9 @@ fn wait_for_device_reconnect(original_port: &str, timeout_secs: u64) -> Result<S
     std::thread::sleep(std::time::Duration::from_secs(8));
 
     loop {
+        // 每轮循环检查取消标志（H5）
+        check_cancelled(cancel_flag)?;
+
         if start.elapsed() > timeout {
             log::warn!("设备重连超时");
             // 超时不报错，返回原端口让后续验证尝试
@@ -1112,33 +1167,29 @@ fn verify_dfu_manifest(archive_path: &str) -> Result<Option<u32>> {
         }
         found
     } else if is_zip {
-        // zip 解压查找 manifest.json
-        let output = std::process::Command::new("unzip")
-            .arg("-p")
-            .arg(archive_path)
-            .arg("manifest.json")
-            .output()
-            .map_err(|e| anyhow!("调用 unzip 失败: {e}"))?;
-        if output.status.success() && !output.stdout.is_empty() {
-            Some(output.stdout)
-        } else {
-            // 尝试 update_manifest.json
-            let output2 = std::process::Command::new("unzip")
-                .arg("-p")
-                .arg(archive_path)
-                .arg("update_manifest.json")
-                .output()
-                .ok();
-            if let Some(o) = output2 {
-                if o.status.success() && !o.stdout.is_empty() {
-                    Some(o.stdout)
-                } else {
-                    None
-                }
-            } else {
-                None
+        // zip 解压查找 manifest.json — 使用 zip crate（避免依赖外部 unzip 命令，L3）
+        let file = std::fs::File::open(path)
+            .map_err(|e| anyhow!("打开 zip 文件失败: {e}"))?;
+        let mut archive = zip::ZipArchive::new(file)
+            .map_err(|e| anyhow!("读取 zip 归档失败: {e}"))?;
+        let manifest_names = ["manifest.json", "update_manifest.json"];
+        let mut found: Option<Vec<u8>> = None;
+        for i in 0..archive.len() {
+            let mut entry = archive
+                .by_index(i)
+                .map_err(|e| anyhow!("读取 zip 条目失败: {e}"))?;
+            let name = entry.name().to_string();
+            let filename = name.rsplit('/').next().unwrap_or(&name).to_lowercase();
+            if manifest_names.iter().any(|m| filename == *m) {
+                let mut buf = Vec::new();
+                entry
+                    .read_to_end(&mut buf)
+                    .map_err(|e| anyhow!("读取 manifest 内容失败: {e}"))?;
+                found = Some(buf);
+                break;
             }
         }
+        found
     } else {
         None
     };

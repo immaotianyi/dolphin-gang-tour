@@ -433,6 +433,7 @@ export const useMirrorStore = create<MirrorStore>((set, get) => ({
     if (isMirroring) return;
 
     set({ lastError: null });
+    startFpsTimer();
 
     // 非 Tauri 环境（浏览器）：播放内置 Demo 像素动画
     if (!isTauri()) {
@@ -455,6 +456,7 @@ export const useMirrorStore = create<MirrorStore>((set, get) => ({
 
   stopMirror: async () => {
     set({ lastError: null });
+    stopFpsTimer();
 
     // 停止 Demo 动画定时器（浏览器环境）
     if (_demoTimer) {
@@ -509,30 +511,8 @@ export const useMirrorStore = create<MirrorStore>((set, get) => ({
   },
 
   initListeners: async () => {
-    let frameCount = 0;
-    let fpsTimer: ReturnType<typeof setInterval> | null = null;
-
-    // 每秒计算一次 FPS
-    fpsTimer = setInterval(() => {
-      if (frameCount > 0) {
-        useMirrorStore.setState({ fps: frameCount });
-        frameCount = 0;
-      }
-    }, 1000);
-
-    const unlisten = await onScreenMirrorFrame((frame) => {
-      frameCount++;
-      set({ currentFrame: frame });
-    });
-
-    // 返回组合清理函数
-    return () => {
-      if (fpsTimer) {
-        clearInterval(fpsTimer);
-        fpsTimer = null;
-      }
-      unlisten();
-    };
+    // 已由模块级自动注册监听，此方法保留为空操作以兼容旧调用
+    return () => {};
   },
 
   /**
@@ -592,13 +572,25 @@ let _mirrorUnlisten: (() => void) | null = null;
 let _mirrorFrameCount = 0;
 let _mirrorFpsTimer: ReturnType<typeof setInterval> | null = null;
 
-// 每秒计算 FPS（Demo 动画与真实帧共用此计数器）
-_mirrorFpsTimer = setInterval(() => {
-  if (_mirrorFrameCount > 0) {
-    useMirrorStore.setState({ fps: _mirrorFrameCount });
-    _mirrorFrameCount = 0;
+/** 启动 FPS 计算定时器（仅在镜像运行时） */
+function startFpsTimer() {
+  if (_mirrorFpsTimer) return;
+  _mirrorFpsTimer = setInterval(() => {
+    if (_mirrorFrameCount > 0) {
+      useMirrorStore.setState({ fps: _mirrorFrameCount });
+      _mirrorFrameCount = 0;
+    }
+  }, 1000);
+}
+
+/** 停止 FPS 计算定时器 */
+function stopFpsTimer() {
+  if (_mirrorFpsTimer) {
+    clearInterval(_mirrorFpsTimer);
+    _mirrorFpsTimer = null;
   }
-}, 1000);
+  _mirrorFrameCount = 0;
+}
 
 onScreenMirrorFrame((frame) => {
   _mirrorFrameCount++;

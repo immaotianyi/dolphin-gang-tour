@@ -1,0 +1,21 @@
+DolphinTutor themes-pack 说明
+================================
+
+本目录不直接包含主题文件。
+
+获取方式：
+  运行 download.sh 自动下载，或从以下来源手动下载：
+  - Psyduck:   https://github.com/naisatoh/Psyduck-Asset-Pack
+  - WatchDogs: https://github.com/WillyJL/Flipper-WatchDogs-AssetPack
+
+许可证状态：
+  以上两个仓库在编写本文件时均未包含 LICENSE 文件，
+  根据版权法默认规则，无许可证 = All Rights Reserved。
+  因此本仓库不直接包含这些文件，由用户自行下载并确认许可证。
+
+安装路径（设备端）：
+  /ext/themes/
+
+注意：
+  Asset Pack 主题需配合 Momentum 固件使用。
+  WatchDogs 主题含游戏资产转换内容，请注意商标风险。

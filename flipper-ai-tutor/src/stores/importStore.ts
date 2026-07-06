@@ -265,19 +265,8 @@ export const useImportStore = create<ImportStore>((set, get) => ({
     }),
 
   initListeners: async () => {
-    const unlisten = await onImportProgress((progress) => {
-      set({ progress });
-
-      if (progress.phase === "done") {
-        set({ isImporting: false });
-      } else if (progress.phase === "error") {
-        set({
-          isImporting: false,
-          lastError: progress.errorMessage ?? "导入出错",
-        });
-      }
-    });
-    return unlisten;
+    // 已由模块级自动注册监听，此方法保留为空操作以兼容旧调用
+    return () => {};
   },
 
   // ---- 兼容别名 ----

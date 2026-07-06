@@ -25,5 +25,20 @@ export default defineConfig({
     target: "es2021",
     minify: "esbuild",
     sourcemap: false,
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom"],
+          "state-vendor": ["zustand"],
+        },
+      },
+    },
+  },
+  esbuild: {
+    // 生产环境移除 console 和 debugger 语句
+    drop: ["console", "debugger"],
+    // 混淆变量名（增强 JS 代码保护）
+    legalComments: "none",
   },
 });

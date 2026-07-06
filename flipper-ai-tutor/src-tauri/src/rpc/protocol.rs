@@ -999,6 +999,179 @@ pub fn storage_rename(session: &RpcSession, old_path: &str, new_path: &str) -> R
     Ok(())
 }
 
+// -------------------- GPIO 命令 --------------------
+//
+// FlipperZero 8 个可编程 GPIO 引脚（与 pb_gpio::GpioPin 枚举顺序一致）：
+//   PC0=0, PC1=1, PC3=2, PB2=3, PB3=4, PA4=5, PA6=6, PA7=7
+//
+// RPC 命令 ID（对应 flipper.proto 中 oneof content 的标签号）：
+//   GpioSetPinMode          = 51
+//   GpioSetInputPull        = 52
+//   GpioGetPinMode          = 53 / GpioGetPinModeResponse  = 54
+//   GpioReadPin             = 55 / GpioReadPinResponse     = 56
+//   GpioWritePin            = 57
+//   GpioGetOtgMode          = 72 / GpioGetOtgModeResponse  = 73
+//   GpioSetOtgMode          = 74
+
+/// 所有可编程 GPIO 引脚名称（与 pb_gpio::GpioPin 枚举顺序一致）
+pub const GPIO_PIN_NAMES: &[&str] = &["PC0", "PC1", "PC3", "PB2", "PB3", "PA4", "PA6", "PA7"];
+
+/// 解析引脚名称为 pb_gpio::GpioPin 枚举
+pub fn parse_gpio_pin(name: &str) -> Result<pb_gpio::GpioPin> {
+    match name.to_uppercase().as_str() {
+        "PC0" => Ok(pb_gpio::GpioPin::Pc0),
+        "PC1" => Ok(pb_gpio::GpioPin::Pc1),
+        "PC3" => Ok(pb_gpio::GpioPin::Pc3),
+        "PB2" => Ok(pb_gpio::GpioPin::Pb2),
+        "PB3" => Ok(pb_gpio::GpioPin::Pb3),
+        "PA4" => Ok(pb_gpio::GpioPin::Pa4),
+        "PA6" => Ok(pb_gpio::GpioPin::Pa6),
+        "PA7" => Ok(pb_gpio::GpioPin::Pa7),
+        other => bail!("未知 GPIO 引脚: {}", other),
+    }
+}
+
+/// 设置 GPIO 引脚模式（OUTPUT / INPUT）
+///
+/// RPC command_id=51, content=GpioSetPinMode
+pub fn gpio_set_pin_mode(session: &RpcSession, pin: &str, mode: &str) -> Result<()> {
+    log::debug!("RPC: gpio_set_pin_mode pin={} mode={}", pin, mode);
+    let pin_val = parse_gpio_pin(pin)? as i32;
+    let mode_val = match mode.to_lowercase().as_str() {
+        "output" => pb_gpio::GpioPinMode::Output as i32,
+        "input" => pb_gpio::GpioPinMode::Input as i32,
+        other => bail!("未知 GPIO 模式: {}（仅支持 output/input）", other),
+    };
+    let main = build_main(
+        51,
+        pb::main::Content::GpioSetPinMode(pb_gpio::SetPinMode {
+            pin: pin_val,
+            mode: mode_val,
+        }),
+    );
+    let _ = rpc_send_recv(session, main)?;
+    Ok(())
+}
+
+/// 设置 GPIO 输入上下拉电阻（NO / UP / DOWN）
+///
+/// RPC command_id=52, content=GpioSetInputPull
+pub fn gpio_set_input_pull(session: &RpcSession, pin: &str, pull: &str) -> Result<()> {
+    log::debug!("RPC: gpio_set_input_pull pin={} pull={}", pin, pull);
+    let pin_val = parse_gpio_pin(pin)? as i32;
+    let pull_val = match pull.to_lowercase().as_str() {
+        "no" => pb_gpio::GpioInputPull::No as i32,
+        "up" => pb_gpio::GpioInputPull::Up as i32,
+        "down" => pb_gpio::GpioInputPull::Down as i32,
+        other => bail!("未知 GPIO 上下拉: {}（仅支持 no/up/down）", other),
+    };
+    let main = build_main(
+        52,
+        pb::main::Content::GpioSetInputPull(pb_gpio::SetInputPull {
+            pin: pin_val,
+            pull_mode: pull_val,
+        }),
+    );
+    let _ = rpc_send_recv(session, main)?;
+    Ok(())
+}
+
+/// 查询 GPIO 引脚当前模式
+///
+/// RPC command_id=53（请求）/ 54（响应）
+/// 返回 "output" | "input"
+pub fn gpio_get_pin_mode(session: &RpcSession, pin: &str) -> Result<String> {
+    log::debug!("RPC: gpio_get_pin_mode pin={}", pin);
+    let pin_val = parse_gpio_pin(pin)? as i32;
+    let main = build_main(
+        53,
+        pb::main::Content::GpioGetPinMode(pb_gpio::GetPinMode { pin: pin_val }),
+    );
+    let resp = rpc_send_recv(session, main)?;
+    if let Some(pb::main::Content::GpioGetPinModeResponse(r)) = resp.content {
+        match r.mode {
+            0 => Ok("output".to_string()),
+            1 => Ok("input".to_string()),
+            other => bail!("未知 GPIO 模式值: {}", other),
+        }
+    } else {
+        bail!("GPIO GetPinMode 响应内容缺失")
+    }
+}
+
+/// 读取 GPIO 引脚电平值
+///
+/// RPC command_id=55（请求）/ 56（响应）
+/// 返回 0 或 1
+pub fn gpio_read_pin(session: &RpcSession, pin: &str) -> Result<u32> {
+    log::debug!("RPC: gpio_read_pin pin={}", pin);
+    let pin_val = parse_gpio_pin(pin)? as i32;
+    let main = build_main(
+        55,
+        pb::main::Content::GpioReadPin(pb_gpio::ReadPin { pin: pin_val }),
+    );
+    let resp = rpc_send_recv(session, main)?;
+    if let Some(pb::main::Content::GpioReadPinResponse(r)) = resp.content {
+        Ok(r.value)
+    } else {
+        bail!("GPIO ReadPin 响应内容缺失")
+    }
+}
+
+/// 写入 GPIO 引脚电平值（仅 OUTPUT 模式有效）
+///
+/// RPC command_id=57, content=GpioWritePin
+pub fn gpio_write_pin(session: &RpcSession, pin: &str, value: u32) -> Result<()> {
+    log::debug!("RPC: gpio_write_pin pin={} value={}", pin, value);
+    let pin_val = parse_gpio_pin(pin)? as i32;
+    let main = build_main(
+        57,
+        pb::main::Content::GpioWritePin(pb_gpio::WritePin {
+            pin: pin_val,
+            value,
+        }),
+    );
+    let _ = rpc_send_recv(session, main)?;
+    Ok(())
+}
+
+/// 查询 OTG 模式
+///
+/// RPC command_id=72（请求）/ 73（响应）
+/// 返回 "on" | "off"
+pub fn gpio_get_otg_mode(session: &RpcSession) -> Result<String> {
+    log::debug!("RPC: gpio_get_otg_mode");
+    let main = build_main(72, pb::main::Content::GpioGetOtgMode(pb_gpio::GetOtgMode {}));
+    let resp = rpc_send_recv(session, main)?;
+    if let Some(pb::main::Content::GpioGetOtgModeResponse(r)) = resp.content {
+        match r.mode {
+            0 => Ok("off".to_string()),
+            1 => Ok("on".to_string()),
+            other => bail!("未知 OTG 模式值: {}", other),
+        }
+    } else {
+        bail!("GPIO GetOtgMode 响应内容缺失")
+    }
+}
+
+/// 设置 OTG 模式（ON / OFF）
+///
+/// RPC command_id=74, content=GpioSetOtgMode
+pub fn gpio_set_otg_mode(session: &RpcSession, mode: &str) -> Result<()> {
+    log::debug!("RPC: gpio_set_otg_mode mode={}", mode);
+    let mode_val = match mode.to_lowercase().as_str() {
+        "off" => pb_gpio::GpioOtgMode::Off as i32,
+        "on" => pb_gpio::GpioOtgMode::On as i32,
+        other => bail!("未知 OTG 模式: {}（仅支持 on/off）", other),
+    };
+    let main = build_main(
+        74,
+        pb::main::Content::GpioSetOtgMode(pb_gpio::SetOtgMode { mode: mode_val }),
+    );
+    let _ = rpc_send_recv(session, main)?;
+    Ok(())
+}
+
 // -------------------- DeviceInfo 组装 --------------------
 
 /// 从 DeviceInfo 和 PowerInfo 键值对组装 DeviceInfo 结构

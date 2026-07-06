@@ -170,7 +170,19 @@ impl ScreenStream {
                 Ok(None)
             }
             Err(e) => {
-                log::trace!("读取屏幕帧失败: {e}");
+                let err_str = e.to_string();
+                // 判断是否为不可恢复错误（端口关闭/IO 错误）
+                if err_str.contains("Resource")
+                    || err_str.contains("device")
+                    || err_str.contains("closed")
+                    || err_str.contains("No such")
+                    || err_str.contains("Bad file")
+                {
+                    log::error!("屏幕镜像不可恢复错误: {e}");
+                    return Err(e);
+                }
+                // 可恢复错误（超时/校验错），静默重试
+                log::trace!("读取屏幕帧可恢复错误: {e}");
                 Ok(None)
             }
         }

@@ -1,5 +1,5 @@
 /**
- * FlipperZero AI Tutor — 高级SVG图标系统
+ * DolphinTutor — 高级SVG图标系统
  * 设计语言: 80s Retro Cyberpunk / 8-bit Pixel Art / 终端线条风
  * 全部为手工绘制的矢量SVG，不使用任何emoji
  * 描边宽度统一1.5px，端点方形，连接圆角，贴合像素美学
