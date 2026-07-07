@@ -133,8 +133,8 @@ pub fn list_resource_packages() -> Vec<ResourcePackage> {
         },
         ResourcePackage {
             id: "themes-pack".to_string(),
-            name: "主题包（需运行 download.sh 下载）".to_string(),
-            description: "Psyduck + WatchDogs 主题（需运行 download.sh 下载）".to_string(),
+            name: "主题包（需手动获取素材）".to_string(),
+            description: "Psyduck + WatchDogs 主题（无 LICENSE，需联系作者授权后手动放入目录）".to_string(),
             category: ResourceCategory::Themes,
             size_bytes: 0,
             file_count: 0,
@@ -304,6 +304,23 @@ where
         .find(|p| p.id == package_id)
         .ok_or_else(|| anyhow!("资源包不存在: {}", package_id))?
         .clone();
+
+    // ---------- 安全审查（仅 BadUSB 类资源包）----------
+    // 在导入前扫描脚本内容，拦截含危险命令的恶意 payload
+    if package.category == ResourceCategory::Badusb {
+        if let Some(ref local_path) = package.local_path {
+            let pkg_dir = Path::new(local_path);
+            progress.log("安全审查: 扫描 BadUSB 脚本内容...");
+            progress_cb(progress.clone());
+            if let Err(e) = crate::import::badusb_guard::verify_badusb_package(pkg_dir) {
+                progress.log(format!("安全审查未通过: {}", e));
+                progress_cb(progress.clone());
+                return Err(e);
+            }
+            progress.log("BadUSB 脚本安全审查通过");
+            progress_cb(progress.clone());
+        }
+    }
 
     // ---------- 阶段 1：预检空间 ----------
     check_cancelled(cancel_flag)?;

@@ -435,7 +435,7 @@ export const SettingsModal: React.FC = () => {
           />
           <div className="font-term text-dim" style={{ fontSize: 13 }}>
             所有发送给云端的数据会先经过脱敏处理（过滤门禁 UID / NFC 密钥 / WiFi 密码 / 坐标等敏感信息）。
-            API Key 仅存储在本地配置文件中，不会上传到任何服务器。
+            API Key 使用系统钥匙串（macOS Keychain / Windows Credential Manager）加密存储，永不外传。
           </div>
         </div>
       )}

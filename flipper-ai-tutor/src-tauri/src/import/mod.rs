@@ -20,6 +20,7 @@
 // =============================================================================
 
 pub mod pipeline;
+pub mod badusb_guard;
 
 use serde::{Deserialize, Serialize};
 
