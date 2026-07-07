@@ -1,4 +1,4 @@
-# DolphinTutor
+# Dolphin Gang Tour
 
 > 面向零基础用户的 Flipper Zero 手把手 AI 教学 & 一键资源导入工具
 >
@@ -132,5 +132,5 @@ MIT — 见 [LICENSE](LICENSE) 文件
 ## 商标声明
 
 - "Flipper Zero" 是 Flipper Devices Inc. 的注册商标
-- "DolphinTutor" 是本项目的独立品牌名称
+- "Dolphin Gang Tour" 是本项目的独立品牌名称
 - 本产品与 Flipper Devices Inc. 无任何关联、赞助或合作关系

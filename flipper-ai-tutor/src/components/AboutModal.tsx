@@ -45,7 +45,7 @@ export const AboutModal: React.FC = () => {
           <Icon name="dolphin" size={48} style={{ color: "var(--c-orange)" }} />
         </div>
         <div className="font-pixel text-orange" style={{ fontSize: 14 }}>
-          DolphinTutor
+          Dolphin Gang Tour
         </div>
         <div className="font-term text-dim" style={{ fontSize: 12, marginTop: 4 }}>
           v1.0.0 | MIT License
@@ -97,7 +97,7 @@ export const AboutModal: React.FC = () => {
           <Icon name="heart" size={12} style={{ color: "var(--c-red)", verticalAlign: "middle", marginRight: 4 }} />
           欢迎通过 Pull Request 贡献代码 — 详见
           <a
-            href="https://github.com/immaotianyi/flipperzero-ai-tutor/blob/main/CONTRIBUTING.md"
+            href="https://github.com/immaotianyi/dolphin-gang-tour/blob/main/CONTRIBUTING.md"
             target="_blank"
             rel="noopener noreferrer"
             className="about-link"
@@ -161,7 +161,7 @@ export const AboutModal: React.FC = () => {
           }}
         >
           <div className="font-term text-dim" style={{ fontSize: 12, lineHeight: 1.7 }}>
-            DolphinTutor 基于 MIT 许可证开源。
+            Dolphin Gang Tour 基于 MIT 许可证开源。
             <br />
             "Flipper Zero" 是 Flipper Devices Inc. 的注册商标，本产品为非官方社区项目。
             <br />
@@ -201,7 +201,7 @@ export const AboutModal: React.FC = () => {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
           <a
-            href="https://github.com/immaotianyi/flipperzero-ai-tutor"
+            href="https://github.com/immaotianyi/dolphin-gang-tour"
             target="_blank"
             rel="noopener noreferrer"
             className="about-link btn"
@@ -211,7 +211,7 @@ export const AboutModal: React.FC = () => {
             仓库
           </a>
           <a
-            href="https://github.com/immaotianyi/flipperzero-ai-tutor/issues"
+            href="https://github.com/immaotianyi/dolphin-gang-tour/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="about-link btn"
@@ -221,7 +221,7 @@ export const AboutModal: React.FC = () => {
             反馈
           </a>
           <a
-            href="https://github.com/immaotianyi/flipperzero-ai-tutor/blob/main/THIRDPARTY.md"
+            href="https://github.com/immaotianyi/dolphin-gang-tour/blob/main/THIRDPARTY.md"
             target="_blank"
             rel="noopener noreferrer"
             className="about-link btn"
@@ -231,7 +231,7 @@ export const AboutModal: React.FC = () => {
             第三方许可
           </a>
           <a
-            href="https://github.com/immaotianyi/flipperzero-ai-tutor/blob/main/CHANGELOG.md"
+            href="https://github.com/immaotianyi/dolphin-gang-tour/blob/main/CHANGELOG.md"
             target="_blank"
             rel="noopener noreferrer"
             className="about-link btn"
@@ -248,7 +248,7 @@ export const AboutModal: React.FC = () => {
         className="font-term text-dim"
         style={{ fontSize: 11, textAlign: "center", marginTop: 12, paddingTop: 8, borderTop: "1px solid var(--c-gray)" }}
       >
-        © 2026 DolphinTutor. Licensed under the MIT License.
+        © 2026 Dolphin Gang Tour. Licensed under the MIT License.
         <br />
         Made with <Icon name="heart" size={10} style={{ color: "var(--c-red)", verticalAlign: "middle" }} /> for the Flipper Zero community.
       </div>

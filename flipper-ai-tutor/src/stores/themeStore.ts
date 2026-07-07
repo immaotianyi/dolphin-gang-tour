@@ -20,7 +20,7 @@ interface ThemeState {
   setTheme: (t: AppTheme) => void;
 }
 
-const STORAGE_KEY = "dolphintutor-theme";
+const STORAGE_KEY = "dolphin-gang-tour-theme";
 
 function loadTheme(): AppTheme {
   try {

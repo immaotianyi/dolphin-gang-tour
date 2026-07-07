@@ -1,5 +1,5 @@
 #!/bin/bash
-# DolphinTutor 游戏包下载脚本
+# Dolphin Gang Tour 游戏包下载脚本
 #
 # .fap 文件来自 xMasterX/all-the-plugins (GPL-3.0 许可)
 # 因 GPL-3.0 再分发要求，本仓库不直接包含 .fap 二进制文件
@@ -13,7 +13,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMP_DIR="$(mktemp -d)"
 
-echo "DolphinTutor 游戏包下载工具"
+echo "Dolphin Gang Tour 游戏包下载工具"
 echo "来源: xMasterX/all-the-plugins (GPL-3.0)"
 echo ""
 

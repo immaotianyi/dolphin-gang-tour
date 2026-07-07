@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_safe_script() {
-        let content = "STRING Hello World from DolphinTutor!";
+        let content = "STRING Hello World from Dolphin Gang Tour!";
         let result = inspect_content("hello.txt", content);
         assert_eq!(result.level, GuardLevel::Safe);
     }
@@ -280,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_safe_notepad_with_education() {
-        let content = "STRING notepad\nSTRING This is a DolphinTutor education demo";
+        let content = "STRING notepad\nSTRING This is a Dolphin Gang Tour education demo";
         let result = inspect_content("demo.txt", content);
         // 含 notepad(WARN) + dolphin(SAFE) → Safe（安全标记覆盖）
         assert_eq!(result.level, GuardLevel::Safe);

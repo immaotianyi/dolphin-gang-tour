@@ -491,7 +491,7 @@ const EmptyState: React.FC<{ onPickCourse: (id: string) => void }> = ({
       DOLPHIN ONLINE
     </div>
     <div className="font-term" style={{ color: "var(--c-green)", fontSize: 18, marginBottom: 16 }}>
-      嗨！我是你的 DolphinTutor AI 导师。我可以手把手教你玩转 Flipper Zero。
+      嗨！我是你的 Dolphin Gang Tour AI 导师。我可以手把手教你玩转 Flipper Zero。
       <br />
       点下面任一课程开始，或直接在底部输入框提问。
     </div>

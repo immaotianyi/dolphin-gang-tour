@@ -1,4 +1,4 @@
-# DolphinTutor 主题资源
+# Dolphin Gang Tour 主题资源
 
 ## ⚠️ 版权声明
 
@@ -27,4 +27,4 @@
 
 ---
 
-DolphinTutor 项目不对第三方主题资源的版权合规性承担责任。
+Dolphin Gang Tour 项目不对第三方主题资源的版权合规性承担责任。

@@ -21,7 +21,7 @@ import { Icon } from "@/components/Icon";
 
 const DOUYIN_ID = "Ciao778899";
 const COUNTDOWN_SECONDS = 5;
-const DOUYIN_SHOWN_KEY = "dolphintutor-douyin-shown";
+const DOUYIN_SHOWN_KEY = "dolphin-gang-tour-douyin-shown";
 
 /** 法律条文数据 */
 const LAW_ARTICLES = [
@@ -496,7 +496,7 @@ export const LegalWarning: React.FC<LegalWarningProps> = ({ onComplete }) => {
 
             {/* 作者名 */}
             <div className="font-pixel text-orange" style={{ fontSize: 11, marginBottom: 4 }}>
-              DolphinTutor 开发者
+              Dolphin Gang Tour 开发者
             </div>
 
             {/* 抖音号 — 大号显示 */}

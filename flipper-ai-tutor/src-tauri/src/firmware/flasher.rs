@@ -167,7 +167,7 @@ fn fetch_latest_firmware_versions() -> Result<std::collections::HashMap<String, 
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
-        .user_agent("DolphinTutor/1.0")
+        .user_agent("Dolphin Gang Tour/1.0")
         .build()
         .map_err(|e| anyhow!("创建 HTTP 客户端失败: {e}"))?;
 

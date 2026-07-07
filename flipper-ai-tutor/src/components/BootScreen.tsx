@@ -122,7 +122,7 @@ export const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
             className="font-pixel text-orange"
             style={{ fontSize: 14, letterSpacing: 2 }}
           >
-            DOLPHINTUTOR
+            DOLPHIN GANG TOUR
           </div>
           <div
             className="font-term text-dim"

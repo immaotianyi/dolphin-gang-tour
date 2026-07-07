@@ -1,4 +1,4 @@
-DolphinTutor games-pack 说明
+Dolphin Gang Tour games-pack 说明
 ================================
 
 本目录不直接包含 .fap 二进制文件。

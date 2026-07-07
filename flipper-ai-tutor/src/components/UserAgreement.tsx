@@ -3,7 +3,7 @@ import React, { useState } from "react";
 /**
  * 用户协议与免责声明
  * 首次启动时展示，用户必须同意才能使用
- * 同意状态存储在 localStorage: "dolphintutor-agreed"
+ * 同意状态存储在 localStorage: "dolphin-gang-tour-agreed"
  */
 export const UserAgreement: React.FC<{ onAgree: () => void }> = ({ onAgree }) => {
   const [tab, setTab] = useState<"agreement" | "privacy">("agreement");
@@ -21,7 +21,7 @@ export const UserAgreement: React.FC<{ onAgree: () => void }> = ({ onAgree }) =>
         {/* 标题 */}
         <div style={{ textAlign: "center", padding: "16px 20px 8px" }}>
           <div className="font-pixel text-orange" style={{ fontSize: 12, letterSpacing: 2 }}>
-            DOLPHINTUTOR
+            DOLPHIN GANG TOUR
           </div>
           <div className="font-term text-dim" style={{ fontSize: 14, marginTop: 4 }}>
             用户协议与隐私政策
@@ -85,8 +85,8 @@ export const UserAgreement: React.FC<{ onAgree: () => void }> = ({ onAgree }) =>
               border: "none", cursor: "pointer", fontWeight: "bold",
             }}
             onClick={() => {
-              localStorage.setItem("dolphintutor-agreed", "true");
-              localStorage.setItem("dolphintutor-agreed-date", new Date().toISOString());
+              localStorage.setItem("dolphin-gang-tour-agreed", "true");
+              localStorage.setItem("dolphin-gang-tour-agreed-date", new Date().toISOString());
               onAgree();
             }}
           >
@@ -102,7 +102,7 @@ export const UserAgreement: React.FC<{ onAgree: () => void }> = ({ onAgree }) =>
 const AgreementContent: React.FC = () => (
   <div className="font-term" style={{ fontSize: 13, lineHeight: 1.8, color: "var(--c-text)" }}>
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginBottom: 8 }}>⚠️ 重要声明</p>
-    <p style={{ marginBottom: 12 }}>本产品 DolphinTutor 是一款独立开发的桌面工具软件，<strong style={{color:"var(--c-orange)"}}>非 Flipper Devices Inc. 官方产品</strong>，与 Flipper Devices Inc. 无任何关联、赞助或合作关系。"Flipper Zero" 是 Flipper Devices Inc. 的注册商标，本产品仅在描述兼容性时进行指示性使用。</p>
+    <p style={{ marginBottom: 12 }}>本产品 Dolphin Gang Tour 是一款独立开发的桌面工具软件，<strong style={{color:"var(--c-orange)"}}>非 Flipper Devices Inc. 官方产品</strong>，与 Flipper Devices Inc. 无任何关联、赞助或合作关系。"Flipper Zero" 是 Flipper Devices Inc. 的注册商标，本产品仅在描述兼容性时进行指示性使用。</p>
 
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>一、用途限定</p>
     <p>本产品仅供以下合法用途使用：</p>
@@ -142,7 +142,7 @@ const AgreementContent: React.FC = () => (
     <p>本产品建议在成人指导下使用。未成年人应在监护人陪同下阅读本协议并使用本产品。</p>
 
     <p style={{ color: "var(--c-dim)", fontSize: 12, marginTop: 20, textAlign: "center" }}>
-      最后更新：2026年7月7日 · DolphinTutor
+      最后更新：2026年7月7日 · Dolphin Gang Tour
     </p>
   </div>
 );
@@ -151,7 +151,7 @@ const AgreementContent: React.FC = () => (
 const PrivacyContent: React.FC = () => (
   <div className="font-term" style={{ fontSize: 13, lineHeight: 1.8, color: "var(--c-text)" }}>
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginBottom: 8 }}>隐私政策</p>
-    <p>本政策说明 DolphinTutor 如何收集、使用、存储和传输您的数据。</p>
+    <p>本政策说明 Dolphin Gang Tour 如何收集、使用、存储和传输您的数据。</p>
 
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>一、数据收集</p>
     <p>本产品在本地运行，<strong>不主动收集您的个人信息</strong>。以下数据仅在本地存储和处理：</p>
@@ -200,7 +200,7 @@ const PrivacyContent: React.FC = () => (
     </ul>
 
     <p style={{ color: "var(--c-dim)", fontSize: 12, marginTop: 20, textAlign: "center" }}>
-      最后更新：2026年7月7日 · DolphinTutor
+      最后更新：2026年7月7日 · Dolphin Gang Tour
     </p>
   </div>
 );

@@ -30,7 +30,7 @@
 - 7 种脱敏模式（UID/NFC Key/WiFi/API Key/手机号/邮箱/坐标）
 
 ### Legal
-- 产品名 DolphinTutor（非官方产品，与 Flipper Devices Inc. 无关联）
+- 产品名 Dolphin Gang Tour（非官方产品，与 Flipper Devices Inc. 无关联）
 - 原创海豚图标
 - MIT 许可证 + THIRDPARTY.md 第三方组件声明
 - GPL v2 许可证文本（dfu-util 参考）

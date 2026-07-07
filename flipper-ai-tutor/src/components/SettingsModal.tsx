@@ -554,11 +554,11 @@ export const SettingsModal: React.FC = () => {
       <div style={{ borderTop: "1px solid var(--c-gray)", marginTop: 12, paddingTop: 12 }}>
         <div className="font-pixel text-orange" style={{ fontSize: 9, marginBottom: 8 }}>ABOUT</div>
         <div className="font-term text-dim" style={{ fontSize: 12, lineHeight: 1.8 }}>
-          DolphinTutor v1.0.0<br/>
+          Dolphin Gang Tour v1.0.0<br/>
           非官方产品，与 Flipper Devices Inc. 无关联<br/>
           "Flipper Zero" 是 Flipper Devices Inc. 的注册商标<br/>
           本产品含 GPL v2 许可的 dfu-util（独立组件）<br/>
-          © 2026 DolphinTutor. Licensed under the MIT License.
+          © 2026 Dolphin Gang Tour. Licensed under the MIT License.
         </div>
       </div>
     </div>

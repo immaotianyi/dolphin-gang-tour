@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "DolphinTutor",
+  "productName": "Dolphin Gang Tour",
   "version": "1.0.0",
-  "identifier": "com.dolphintutor.app",
+  "identifier": "com.dolphin-gang-tour.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "DolphinTutor",
+        "title": "Dolphin Gang Tour",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
@@ -37,8 +37,8 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "DolphinTutor",
-    "copyright": "© 2026 DolphinTutor. Licensed under the MIT License.",
+    "publisher": "Dolphin Gang Tour",
+    "copyright": "© 2026 Dolphin Gang Tour. Licensed under the MIT License.",
     "category": "Utility",
     "shortDescription": "适配 Flipper Zero 的全功能桌面伴侣应用",
     "longDescription": "Flipper Zero 资源管理、固件刷写、AI 辅导、虚拟设备模拟一站式工具（非官方产品，与 Flipper Devices Inc. 无关联）",

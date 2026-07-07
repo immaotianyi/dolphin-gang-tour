@@ -137,7 +137,7 @@ pub struct AppState {
 ///   Linux: ~/.config/app/ai_config.json
 ///   Windows: %APPDATA%\app\ai_config.json
 fn ai_config_path() -> Option<std::path::PathBuf> {
-    let proj_dirs = directories::ProjectDirs::from("com", "dolphintutor", "app")?;
+    let proj_dirs = directories::ProjectDirs::from("com", "dolphin-gang-tour", "app")?;
     let config_dir = proj_dirs.config_dir();
     let _ = std::fs::create_dir_all(config_dir);
     Some(config_dir.join("ai_config.json"))
@@ -164,7 +164,7 @@ fn load_ai_config() -> ai::AiModelConfig {
         Ok(content) => match serde_json::from_str::<ai::AiModelConfig>(&content) {
             Ok(mut config) => {
                 // H1: JSON 文件中 api_key 为空字符串，从系统钥匙串读取真实 API Key 填充回 config
-                config.api_key = match Entry::new("com.dolphintutor.app", "api_key") {
+                config.api_key = match Entry::new("com.dolphin-gang-tour.app", "api_key") {
                     Ok(entry) => entry.get_password().unwrap_or_default(),
                     Err(e) => {
                         log::warn!("创建钥匙串条目失败: {e}，API Key 留空");
@@ -206,7 +206,7 @@ fn save_ai_config(config: &ai::AiModelConfig) {
     // H1: 将 API Key 存入系统钥匙串，失败时 fallback 到空字符串（不 panic）
     let api_key = config.api_key.clone();
     if !api_key.is_empty() {
-        match Entry::new("com.dolphintutor.app", "api_key") {
+        match Entry::new("com.dolphin-gang-tour.app", "api_key") {
             Ok(entry) => {
                 if let Err(e) = entry.set_password(&api_key) {
                     log::warn!("钥匙串存储 API Key 失败: {e}");
@@ -274,7 +274,7 @@ fn now_unix_secs() -> u64 {
 
 /// 成就数据持久化文件路径（app_config_dir/achievements.json）
 fn achievements_file_path() -> Option<std::path::PathBuf> {
-    let proj_dirs = directories::ProjectDirs::from("com", "dolphintutor", "app")?;
+    let proj_dirs = directories::ProjectDirs::from("com", "dolphin-gang-tour", "app")?;
     let config_dir = proj_dirs.config_dir();
     let _ = std::fs::create_dir_all(config_dir);
     Some(config_dir.join("achievements.json"))
@@ -1666,7 +1666,7 @@ pub fn run() {
         .format_timestamp_secs()
         .init();
 
-    log::info!("DolphinTutor 后端启动中...");
+    log::info!("Dolphin Gang Tour 后端启动中...");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

@@ -18,7 +18,7 @@ labels: bug
 
 ## 环境信息
 - 操作系统：
-- DolphinTutor 版本：
+- Dolphin Gang Tour 版本：
 - Flipper Zero 固件版本（如有）：
 
 ## 截图/日志

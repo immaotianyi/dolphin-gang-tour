@@ -997,7 +997,7 @@ export const App: React.FC = () => {
   const [showLegalWarning, setShowLegalWarning] = useState(true);
   // 首次启动用户协议：未同意时（法律警示完成后）展示，同意后进入主界面
   const [showAgreement, setShowAgreement] = useState(() => {
-    return !localStorage.getItem("dolphintutor-agreed");
+    return !localStorage.getItem("dolphin-gang-tour-agreed");
   });
 
   // 组件卸载时清理所有 Tauri 事件监听器，防止内存泄漏

@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你对 DolphinTutor 的关注！欢迎提交 Issue 和 Pull Request。
+感谢你对 Dolphin Gang Tour 的关注！欢迎提交 Issue 和 Pull Request。
 
 ## 开发环境
 
@@ -14,8 +14,8 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/immaotianyi/flipperzero-ai-tutor.git
-cd flipperzero-ai-tutor
+git clone https://github.com/immaotianyi/dolphin-gang-tour.git
+cd dolphin-gang-tour
 npm install
 npm run tauri:dev
 ```

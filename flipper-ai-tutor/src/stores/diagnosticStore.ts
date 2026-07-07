@@ -158,7 +158,7 @@ export const useDiagnosticStore = create<DiagnosticStore>((set, get) => ({
       } else {
         // 浏览器模式：生成日志文件下载
         const logs = [
-          `DolphinTutor 诊断日志`,
+          `Dolphin Gang Tour 诊断日志`,
           `导出时间: ${new Date().toLocaleString()}`,
           `---`,
           ...get().results.map(
