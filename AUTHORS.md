@@ -4,8 +4,8 @@
 
 | 角色 | GitHub | 说明 |
 |------|--------|------|
-| **项目维护** | [@immaotianyi](https://github.com/immaotianyi) | 仓库所有者 · 产品方向 |
-| **主开发者** | [@naante845](https://github.com/naante845) | 桌面/移动端构建 · Android/iOS · 服务端 · 安装包发布 |
+| **项目维护** | [@immaotianyi](https://github.com/immaotianyi) | 仓库所有者 · 产品与设计 |
+| **核心开发者** | [@naante845](https://github.com/naante845) | 桌面/移动端构建 · Android/iOS · 服务端 · 安装包发布 |
 
 ## 致谢 / Acknowledgments
 

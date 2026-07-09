@@ -10,6 +10,8 @@
 
 **[中文版](./README.md)** · **[Downloads](./DOWNLOADS_EN.md)** · **[Authors](./AUTHORS_EN.md)**
 
+**Developers:** [@immaotianyi](https://github.com/immaotianyi) · [@naante845](https://github.com/naante845)
+
 *Unofficial community project — not affiliated with Flipper Devices Inc.*
 
 </div>
