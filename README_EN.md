@@ -17,13 +17,24 @@
 
 ## Download
 
-| Platform | Package | Notes |
-|----------|---------|-------|
-| **Windows x64** | `Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe` | NSIS installer · EULA |
-| **macOS Apple Silicon** | `Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg` | Drag to Applications |
-| **macOS Intel** | `Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg` | Drag to Applications |
-| **Android arm64** | `Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk` | Virtual device + USB dock |
-| **Linux x64** | `.deb` / `.AppImage` | Build via WSL or GitHub Actions |
+> Like [cc-switch Releases](https://github.com/farion1231/cc-switch/releases): **version × platform** matrix with GitHub + mirror links.
+
+### v2.0beta · Latest
+
+| Platform | Package | Size | Download |
+|----------|---------|------|----------|
+| **Windows x64** | `Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe` | 3.8 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe) · [Mirror](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe) |
+| **macOS Apple Silicon** | `Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg` | 2.6 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg) · [Mirror](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg) |
+| **macOS Intel** | `Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg` | 2.8 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg) · [Mirror](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg) |
+| **Android arm64** | `Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk` | 10.6 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk) · [Mirror](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk) |
+
+### v1.2beta · Previous
+
+| Platform | Package | Size | Download |
+|----------|---------|------|----------|
+| **Windows x64** | `Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe` | 3.9 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v1.2.0-beta.0/Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe) · [Mirror](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe) |
+
+**[All versions & SHA256 →](./DOWNLOADS_EN.md)**
 
 > **Beta license key:** `DGT-BETA-2026` (online check is version-only; no Flipper/NFC data collected)
 

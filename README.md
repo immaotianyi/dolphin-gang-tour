@@ -9,7 +9,7 @@
 [![Framework](https://img.shields.io/badge/framework-Tauri%202%20%2B%20React%2018-orange)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
-**[English README](./README_EN.md)** · **[下载 Releases](https://github.com/immaotianyi/dolphin-gang-tour/releases)** · **[在线下载](http://106.15.105.100:3920/download)** · **[更新日志](./flipper-ai-tutor/CHANGELOG.md)**
+**[English README](./README_EN.md)** · **[下载 Downloads](./DOWNLOADS.md)** · **[Releases](https://github.com/immaotianyi/dolphin-gang-tour/releases)** · **[在线下载](http://106.15.105.100:3920/download)** · **[更新日志](./flipper-ai-tutor/CHANGELOG.md)**
 
 </div>
 
@@ -17,13 +17,24 @@
 
 ## 📥 下载安装
 
-| 平台 | 安装包 | 说明 |
-|------|--------|------|
-| **Windows x64** | [Setup.exe](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | NSIS 向导 · 中英文 · EULA |
-| **macOS Apple Silicon** | [arm64.dmg](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | 拖入 Applications |
-| **macOS Intel** | [x64.dmg](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | 拖入 Applications |
-| **Android arm64** | [APK](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | 虚拟设备 + USB 拓展坞实机 |
-| **Linux x64** | deb / AppImage | GitHub Actions 或 WSL 构建 |
+> 参考 [cc-switch Releases](https://github.com/farion1231/cc-switch/releases) 风格：**按版本 × 平台** 列出全部安装包，含 GitHub 直链与国内镜像。
+
+### v2.0beta · Latest
+
+| 平台 | 安装包 | 大小 | 下载 |
+|------|--------|------|------|
+| **Windows x64** | `Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe` | 3.8 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe) · [镜像](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe) |
+| **macOS Apple Silicon** | `Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg` | 2.6 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg) · [镜像](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg) |
+| **macOS Intel** | `Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg` | 2.8 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg) · [镜像](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg) |
+| **Android arm64** | `Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk` | 10.6 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v2.0.0-beta.0/Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk) · [镜像](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk) |
+
+### v1.2beta · 历史版本
+
+| 平台 | 安装包 | 大小 | 下载 |
+|------|--------|------|------|
+| **Windows x64** | `Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe` | 3.9 MB | [GitHub](https://github.com/immaotianyi/dolphin-gang-tour/releases/download/v1.2.0-beta.0/Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe) · [镜像](http://106.15.105.100:3920/releases/Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe) |
+
+**[查看全部版本与 SHA256 →](./DOWNLOADS.md)** · **[English downloads →](./DOWNLOADS_EN.md)**
 
 > **Beta 授权码：** `DGT-BETA-2026`（联网仅校验版本，不收集 Flipper 设备/NFC 数据）
 
