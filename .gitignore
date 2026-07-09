@@ -1,0 +1,27 @@
+# Public GitHub repo — customer-facing only
+node_modules/
+flipper-ai-tutor/node_modules/
+flipper-ai-tutor/dist/
+flipper-ai-tutor/src-tauri/target/
+flipper-ai-tutor/src-tauri/gen/
+flipper-ai-tutor/src-tauri/Cargo.lock
+
+# Secrets
+.env
+.env.*
+secrets.local.env
+flipper-ai-tutor/secrets.local.env
+*.jks
+*.pem
+*.key
+flipper-ai-tutor/src-tauri/android-keystore/
+
+# Build / IDE
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+
+# Maintainer-only (never in public export)
+README-MAINTAINER.md

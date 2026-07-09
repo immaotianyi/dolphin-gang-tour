@@ -1,0 +1,20 @@
+REM ============================================================
+REM  Flipper Zero BadUSB Script - Hello World
+REM  Educational example: opens Notepad and types a greeting.
+REM  Format: Flipper DuckyScript (.txt)
+REM ============================================================
+DEFAULTDELAY 100
+REM Open the Windows "Run" dialog (GUI + R)
+GUI r
+DELAY 600
+REM Type the program name and launch it
+STRING notepad
+DELAY 500
+ENTER
+DELAY 800
+REM Type the greeting message
+STRINGLN Hello, World!
+STRINGLN This text was typed automatically by a Flipper Zero BadUSB script.
+STRINGLN
+STRINGLN Lesson: BadUSB acts as a USB HID keyboard. Use it only on
+STRINGLN devices you own or have permission to test.

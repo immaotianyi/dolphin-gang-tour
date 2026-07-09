@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+secrets/
+src-tauri/android-keystore/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tauri generated
+src-tauri/Cargo.lock.backup
+
+# Binary resources (downloaded via scripts, not committed)
+resources/games-pack/*.fap
+resources/themes-pack/Psyduck/
+resources/themes-pack/WatchDogs/
+
+# dfu-util sidecar (users install separately)
+src-tauri/bin/dfu-util*
+
+# Misc
+.cache/
+.temp/

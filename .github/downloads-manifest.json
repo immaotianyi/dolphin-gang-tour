@@ -1,0 +1,64 @@
+{
+  "repo": "immaotianyi/dolphin-gang-tour",
+  "mirrorBase": "http://106.15.105.100:3920/releases",
+  "releases": [
+    {
+      "tag": "v2.0.0-beta.0",
+      "version": "2.0.0-beta.0",
+      "label": "2.0beta",
+      "latest": true,
+      "date": "2026-07-09",
+      "assets": [
+        {
+          "platform": "windows-x86_64",
+          "filename": "Dolphin-Gang-Tour-v2.0beta-Windows-x64-Setup.exe",
+          "label": "Windows 64-bit",
+          "labelZh": "Windows 64 位",
+          "format": "NSIS 安装向导",
+          "notes": "含 EULA · 中英文安装界面"
+        },
+        {
+          "platform": "macos-arm64",
+          "filename": "Dolphin-Gang-Tour-v2.0beta-macOS-arm64.dmg",
+          "label": "macOS (Apple Silicon)",
+          "labelZh": "macOS Apple Silicon",
+          "format": "DMG",
+          "notes": "拖入 Applications 安装"
+        },
+        {
+          "platform": "macos-x64",
+          "filename": "Dolphin-Gang-Tour-v2.0beta-macOS-x64.dmg",
+          "label": "macOS (Intel)",
+          "labelZh": "macOS Intel",
+          "format": "DMG",
+          "notes": "拖入 Applications 安装"
+        },
+        {
+          "platform": "android-arm64",
+          "filename": "Dolphin-Gang-Tour-v2.0beta-Android-arm64.apk",
+          "label": "Android (arm64)",
+          "labelZh": "Android arm64",
+          "format": "APK",
+          "notes": "虚拟设备 + USB 拓展坞实机 · 已 v2/v3 签名"
+        }
+      ]
+    },
+    {
+      "tag": "v1.2.0-beta.0",
+      "version": "1.2.0-beta.0",
+      "label": "1.2beta",
+      "latest": false,
+      "date": "2026-07-07",
+      "assets": [
+        {
+          "platform": "windows-x86_64",
+          "filename": "Dolphin-Gang-Tour-v1.2beta-Windows-x64-Setup.exe",
+          "label": "Windows 64-bit",
+          "labelZh": "Windows 64 位",
+          "format": "NSIS 安装向导",
+          "notes": "历史版本 · 仅 Windows"
+        }
+      ]
+    }
+  ]
+}

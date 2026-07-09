@@ -1,0 +1,88 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Dolphin Gang Tour",
+  "version": "1.0.0",
+  "identifier": "com.dolphin-gang-tour.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Dolphin Gang Tour",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com https://raw.githubusercontent.com https://*.flipperzero.one"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "Dolphin Gang Tour",
+    "copyright": "© 2026 Dolphin Gang Tour. Licensed under the MIT License.",
+    "category": "Utility",
+    "shortDescription": "适配 Flipper Zero 的全功能桌面伴侣应用",
+    "longDescription": "Flipper Zero 资源管理、固件刷写、学习指导、虚拟设备模拟一站式工具（非官方产品，与 Flipper Devices Inc. 无关联）",
+    "resources": ["resources/*"],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "wix": {
+        "language": "zh-CN"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libayatana-appindicator3-1"]
+      }
+    },
+    "android": {
+      "minSdkVersion": 24,
+      "targetSdkVersion": 34,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.USB_PERMISSION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ],
+      "usesCleartextTraffic": true,
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png"
+      ]
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}
