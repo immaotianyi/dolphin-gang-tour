@@ -334,7 +334,7 @@ fn all_achievements() -> Vec<(&'static str, &'static str, &'static str, &'static
         ("graduate", "毕业", "完成全部课程", "dolphin", 7),
         ("first_connect", "初次连接", "首次连接 Flipper Zero", "usb", 1),
         ("mirror_master", "镜像大师", "使用屏幕镜像 10 次", "mirror", 10),
-        ("ai_scholar", "AI 学者", "与 AI 对话 100 次", "chip", 100),
+        ("ai_scholar", "知识学者", "与助手对话 100 次", "chip", 100),
         ("collector", "收藏家", "导入全部 7 个资源包", "folder", 7),
     ]
 }
@@ -1422,7 +1422,7 @@ async fn cancel_import(state: State<'_, AppState>) -> Result<IpcVoid, String> {
 async fn cancel_ai_chat(state: State<'_, AppState>) -> Result<IpcVoid, String> {
     log::info!("IPC: cancel_ai_chat");
     state.cancel_ai_chat_flag.store(true, std::sync::atomic::Ordering::SeqCst);
-    push_log(&state, "已请求取消 AI 对话");
+    push_log(&state, "已请求取消助手对话");
     Ok(ok_void())
 }
 

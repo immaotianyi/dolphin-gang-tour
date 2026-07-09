@@ -173,7 +173,7 @@ export const CourseView: React.FC = () => {
           </button>
           <button className="btn" onClick={handleContinue}>
             <Icon name="terminal" size={16} />
-            继续问 AI
+            继续提问
           </button>
           <button className="btn" onClick={() => setView("ai")}>
             <Icon name="chevron-right" size={16} />

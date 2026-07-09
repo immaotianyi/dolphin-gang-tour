@@ -6,7 +6,7 @@
 
 ### Added
 - 设备连接：USB 自动检测 + 虚拟设备模拟
-- AI 教学：多模型路由（OpenAI/Anthropic/Google/DeepSeek）+ 流式输出 + 数据脱敏
+- 学习助手：多模型路由（OpenAI/Anthropic/Google/DeepSeek）+ 流式输出 + 数据脱敏
 - 一键导入：7 类资源包 + tar 打包 + Hash Tree 增量同步
 - 固件刷写：双轨守护（RPC 协议 + dfu-util DFU 救砖）
 - 屏幕镜像：128x64 实时帧推送 + 物理按键遥控
@@ -16,7 +16,7 @@
 - 诊断工具：端口检测 + 设备信息 + 日志导出
 - 7 节手把手课程
 - 用户协议与隐私政策（首次启动展示）
-- AI 生成内容标识（符合《深度合成管理规定》）
+- 合成内容标识（符合《深度合成管理规定》）
 - 全局键盘快捷键 + 帮助面板
 - 应用主题切换（Cyberpunk/Green Terminal/Amber）
 - GitHub Actions CI（多平台）

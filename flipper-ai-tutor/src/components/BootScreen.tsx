@@ -40,7 +40,7 @@ const BOOT_LINES: BootLine[] = [
   { text: "LOADING USB DRIVERS", icon: "usb" },
   { text: "MOUNTING SD CARD", icon: "sd" },
   { text: "CONNECTING MODULES", icon: "circuit" },
-  { text: "STARTING AI CORE", icon: "brain" },
+  { text: "LOADING KNOWLEDGE BASE", icon: "brain" },
   { text: "SYSTEM READY", icon: "check" },
 ];
 

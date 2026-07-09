@@ -1,50 +1,27 @@
-# ==================== 依赖目录 ====================
+# Public GitHub repo — customer-facing only
 node_modules/
 flipper-ai-tutor/node_modules/
-
-# ==================== 构建产物 ====================
-# Rust 编译产物
+flipper-ai-tutor/dist/
 flipper-ai-tutor/src-tauri/target/
+flipper-ai-tutor/src-tauri/gen/
 flipper-ai-tutor/src-tauri/Cargo.lock
 
-# 前端构建产物
-flipper-ai-tutor/dist/
-
-# Tauri 构建产物
-flipper-ai-tutor/src-tauri/gen/
-
-# ==================== IDE / 编辑器 ====================
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# ==================== 环境变量 / 密钥 ====================
+# Secrets
 .env
-.env.local
-.env.*.local
+.env.*
+secrets.local.env
+flipper-ai-tutor/secrets.local.env
+*.jks
 *.pem
 *.key
+flipper-ai-tutor/src-tauri/android-keystore/
 
-# ==================== 日志 / 临时文件 ====================
+# Build / IDE
+.vscode/
+.idea/
 *.log
-/tmp/
-flipper-ai-tutor/src-tauri/WixTools/
-
-# ==================== 操作系统文件 ====================
+.DS_Store
 Thumbs.db
-Desktop.ini
-$RECYCLE.BIN/
 
-# ==================== 大文件 / 媒体 ====================
-*.mp4
-*.mov
-*.avi
-
-# ==================== TRAE 工作目录 ====================
-.trae-html-share-packages/
-flipperzero-ai-tutor-fixed.zip
-flipperzero-ai-tutor-fixed.zip
-flipperzero-ai-tutor-fixed.zip
+# Maintainer-only (never in public export)
+README-MAINTAINER.md

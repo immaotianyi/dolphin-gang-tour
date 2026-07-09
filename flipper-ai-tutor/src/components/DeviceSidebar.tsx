@@ -3,7 +3,7 @@
  * - 顶部：设备图标(Icon dolphin)动画 + 设备名 + 连接状态 LED
  * - Flipper 屏幕镜像预览框（.flipper-screen，模拟 128x64 屏幕）
  * - 设备信息网格：FIRMWARE / API LVL / BATTERY / SD CARD / DOLPHIN
- * - 快捷操作菜单：AI教学 / 一键导入 / 固件管理 / 故障诊断 / 资源管理
+ * - 快捷操作菜单：学习助手 / 一键导入 / 固件管理 / 故障诊断 / 资源管理
  * - 课程列表菜单（遍历 COURSES）
  * - 工具菜单：屏幕镜像 / 成就图鉴 / 桌宠 / GPIO沙盘
  * - 未连接设备时显示 "WAITING FOR FLIPPER..." 和扫描按钮
@@ -79,7 +79,7 @@ export const DeviceSidebar: React.FC = () => {
     active: boolean;
     onClick: () => void;
   }[] = [
-    { icon: "terminal", label: "AI 教学", active: activeView === "ai", onClick: () => setView("ai") },
+    { icon: "terminal", label: "学习助手", active: activeView === "ai", onClick: () => setView("ai") },
     { icon: "rocket", label: "一键导入", active: activeView === "import", onClick: () => setView("import") },
     { icon: "wrench", label: "固件管理", active: activeView === "firmware", onClick: () => setView("firmware") },
     { icon: "search", label: "故障诊断", active: activeView === "diagnostic", onClick: () => setView("diagnostic") },

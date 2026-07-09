@@ -21,7 +21,7 @@ const TECH_STACK = [
 const VERSION_HISTORY = [
   { version: "v1.0.0", date: "2026-07-07", changes: "品牌合规重构、电子宠物进化系统、Toast 通知、学习仪表盘、主题切换、键盘快捷键" },
   { version: "v0.9.0", date: "2026-07-06", changes: "39 项缺陷修复、Windows 驱动检测增强、GPIO 沙盘、成就系统" },
-  { version: "v0.8.0", date: "2026-07-05", changes: "AI 多模型路由、数据脱敏层、虚拟设备模拟、一键资源导入" },
+  { version: "v0.8.0", date: "2026-07-05", changes: "多模型路由、数据脱敏层、虚拟设备模拟、一键资源导入" },
   { version: "v0.7.0", date: "2026-07-04", changes: "初始原型：Tauri + Rust + React 基础架构" },
 ];
 
@@ -48,10 +48,10 @@ export const AboutModal: React.FC = () => {
           Dolphin Gang Tour
         </div>
         <div className="font-term text-dim" style={{ fontSize: 12, marginTop: 4 }}>
-          v1.0.0 | MIT License
+          v2.0.0-beta.0 | MIT License
         </div>
         <div className="font-term text-dim" style={{ fontSize: 11, marginTop: 2 }}>
-          面向零基础用户的 Flipper Zero AI 教学工具
+          Flipper Zero 桌面伴侣 · 资源管理 · 固件刷写 · 学习指导
         </div>
       </div>
 
@@ -93,18 +93,39 @@ export const AboutModal: React.FC = () => {
         <div className="font-pixel text-orange" style={{ fontSize: 9, marginBottom: 6 }}>
           CONTRIBUTORS
         </div>
-        <div className="font-term text-dim" style={{ fontSize: 13, lineHeight: 1.6 }}>
-          <Icon name="heart" size={12} style={{ color: "var(--c-red)", verticalAlign: "middle", marginRight: 4 }} />
-          欢迎通过 Pull Request 贡献代码 — 详见
-          <a
-            href="https://github.com/immaotianyi/dolphin-gang-tour/blob/main/CONTRIBUTING.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="about-link"
-            style={{ color: "var(--c-green)", textDecoration: "none", marginLeft: 4 }}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div
+            className="fw-card"
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px" }}
           >
-            CONTRIBUTING.md
-          </a>
+            <Icon name="user" size={22} style={{ color: "var(--c-green)" }} />
+            <div>
+              <div className="font-pixel text-orange" style={{ fontSize: 8 }}>naante845</div>
+              <div className="font-term text-dim" style={{ fontSize: 12 }}>Release & Infrastructure</div>
+            </div>
+            <a
+              href="https://github.com/naante845"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="about-link font-term"
+              style={{ fontSize: 12, color: "var(--c-green)", textDecoration: "none", marginLeft: "auto" }}
+            >
+              GitHub
+            </a>
+          </div>
+          <div className="font-term text-dim" style={{ fontSize: 12, lineHeight: 1.6 }}>
+            <Icon name="heart" size={12} style={{ color: "var(--c-red)", verticalAlign: "middle", marginRight: 4 }} />
+            欢迎通过 Pull Request 贡献 — 详见
+            <a
+              href="https://github.com/immaotianyi/dolphin-gang-tour/blob/main/CONTRIBUTING.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="about-link"
+              style={{ color: "var(--c-green)", textDecoration: "none", marginLeft: 4 }}
+            >
+              CONTRIBUTING.md
+            </a>
+          </div>
         </div>
       </div>
 

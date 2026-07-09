@@ -922,7 +922,7 @@ async function mockInvoke<T>(
         { id: "graduate", name: "毕业", description: "完成全部课程", icon: "dolphin", unlocked: false, unlockedAt: null, progress: 2, target: 7 },
         { id: "first_connect", name: "初次连接", description: "首次连接 Flipper Zero", icon: "usb", unlocked: true, unlockedAt: now - 7200, progress: 1, target: 1 },
         { id: "mirror_master", name: "镜像大师", description: "使用屏幕镜像 10 次", icon: "mirror", unlocked: false, unlockedAt: null, progress: 4, target: 10 },
-        { id: "ai_scholar", name: "AI 学者", description: "与 AI 对话 100 次", icon: "chip", unlocked: false, unlockedAt: null, progress: 12, target: 100 },
+        { id: "ai_scholar", name: "知识学者", description: "与助手对话 100 次", icon: "chip", unlocked: false, unlockedAt: null, progress: 12, target: 100 },
         { id: "collector", name: "收藏家", description: "导入全部 7 个资源包", icon: "folder", unlocked: false, unlockedAt: null, progress: 2, target: 7 },
       ];
       return { success: true, data: list as T };

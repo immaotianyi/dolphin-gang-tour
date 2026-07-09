@@ -91,7 +91,7 @@ const WELCOME_MESSAGE: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "你好！我是 Dolphin Gang Tour AI 助手。你可以问我任何关于 Flipper Zero 的问题，比如如何复制门禁卡、使用红外遥控、捕捉无线信号等。也可以选择一门课程，我会手把手教你操作！",
+    "你好！我是 Dolphin Gang Tour 学习助手。你可以问我任何关于 Flipper Zero 的问题，比如如何复制门禁卡、使用红外遥控、捕捉无线信号等。也可以选择一门课程，我会手把手带你操作！",
   timestamp: Date.now(),
 };
 

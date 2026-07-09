@@ -132,8 +132,8 @@ const AgreementContent: React.FC = () => (
       <li><strong>第三方固件</strong>：刷写解除频段锁定的第三方固件可能违反当地法律</li>
     </ul>
 
-    <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>四、AI 生成内容</p>
-    <p>本产品的 AI 辅导功能由第三方 AI 服务（如 OpenAI、Anthropic 等）提供，AI 生成的回复内容仅供参考，不构成专业建议。用户应对 AI 生成内容的准确性和适用性自行判断。</p>
+    <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>四、在线助手与合成内容</p>
+    <p>本产品的学习助手功能由第三方模型服务（如 OpenAI、Anthropic 等）提供。助手生成的回复内容仅供参考，不构成专业建议。用户应自行判断内容的准确性与适用性。界面中标注「合成内容」的回复，依据《互联网信息服务深度合成管理规定》进行标识。</p>
 
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>五、免责声明</p>
     <p>在法律允许的范围内，开发者不对因使用或无法使用本产品而导致的任何直接、间接、附带或后果性损害承担责任。开发者不对用户违法使用本产品的行为承担连带责任。</p>
@@ -159,23 +159,23 @@ const PrivacyContent: React.FC = () => (
       <li><strong>API Key</strong>：使用系统钥匙串（macOS Keychain / Windows Credential Manager）加密存储，不以明文形式保存</li>
       <li><strong>设备信息</strong>：Flipper Zero 设备 UID、序列号等，仅在本地显示，不上传任何服务器</li>
       <li><strong>NFC/RFID 数据</strong>：卡片数据仅在本地处理，不通过网络传输</li>
-      <li><strong>AI 对话记录</strong>：对话内容通过第三方 AI API 处理（见下文"数据传输"）</li>
+      <li><strong>对话记录</strong>：对话内容通过第三方模型 API 处理（见下文「数据传输」）</li>
       <li><strong>成就/桌宠数据</strong>：存储在本地配置文件和 localStorage 中</li>
     </ul>
 
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>二、数据传输</p>
     <p>以下数据会通过网络传输至第三方服务：</p>
     <ul style={{ paddingLeft: 20, margin: "8px 0" }}>
-      <li><strong>AI 对话内容</strong>：发送至您配置的 AI 服务提供商（OpenAI / Anthropic / Google / DeepSeek）。传输内容由 AI 服务商的隐私政策管辖</li>
-      <li><strong>OCR 截图</strong>：如使用 AI 图片分析功能，截图将发送至 AI 服务商。发送前已进行敏感信息脱敏处理（7种模式）</li>
+      <li><strong>对话内容</strong>：发送至您配置的模型服务提供商（OpenAI / Anthropic / Google / DeepSeek）。传输内容由对应服务商的隐私政策管辖</li>
+      <li><strong>OCR 截图</strong>：如使用图片分析功能，截图将发送至模型服务商。发送前已进行敏感信息脱敏处理（7 种模式）</li>
       <li><strong>固件列表</strong>：从 GitHub API 获取最新固件信息，请求中不包含个人数据</li>
     </ul>
-    <p style={{ marginTop: 8 }}><strong style={{color:"#ff4444"}}>注意</strong>：AI 服务商可能记录您的对话内容。请勿在对话中输入敏感个人信息。</p>
+    <p style={{ marginTop: 8 }}><strong style={{color:"#ff4444"}}>注意</strong>：模型服务商可能记录您的对话内容。请勿在对话中输入敏感个人信息。</p>
 
     <p style={{ color: "var(--c-orange)", fontWeight: "bold", marginTop: 16, marginBottom: 8 }}>三、数据安全</p>
     <ul style={{ paddingLeft: 20, margin: "8px 0" }}>
       <li>API Key 使用系统级加密存储（keyring）</li>
-      <li>AI 脱敏器在发送前过滤 7+ 种敏感模式（UID/NFC Key/WiFi密码/API Key/手机号/邮箱/坐标）</li>
+      <li>内容脱敏器在发送前过滤 7+ 种敏感模式（UID/NFC Key/WiFi密码/API Key/手机号/邮箱/坐标）</li>
       <li>配置文件使用 0600 权限（仅所有者可读写）</li>
       <li>所有网络连接强制 HTTPS</li>
       <li>自定义 API URL 经过 SSRF 防护（禁止内网/云元数据地址）</li>
@@ -196,7 +196,7 @@ const PrivacyContent: React.FC = () => (
     <ul style={{ paddingLeft: 20, margin: "8px 0" }}>
       <li>查看权：您可在设置中查看本地存储的所有配置数据</li>
       <li>删除权：您可随时通过卸载应用或删除配置目录清除所有数据</li>
-      <li>撤回授权权：您可随时清除 API Key 停止 AI 数据传输</li>
+      <li>撤回授权权：您可随时清除 API Key 停止模型数据传输</li>
     </ul>
 
     <p style={{ color: "var(--c-dim)", fontSize: 12, marginTop: 20, textAlign: "center" }}>
