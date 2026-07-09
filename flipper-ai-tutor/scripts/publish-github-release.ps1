@@ -24,7 +24,7 @@ $ManifestPath = Join-Path $RepoRoot ".github\downloads-manifest.json"
 if (-not (Test-Path $ManifestPath)) {
     throw "Manifest not found: $ManifestPath"
 }
-$Manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
+$Manifest = Get-Content $ManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 $gh = Get-Command gh -ErrorAction SilentlyContinue
 if (-not $gh) { throw "GitHub CLI (gh) not found. Install: winget install GitHub.cli" }
@@ -62,8 +62,12 @@ function Publish-OneRelease {
         return
     }
 
-    gh release view $tag -R $Repo 2>$null
-    $exists = ($LASTEXITCODE -eq 0)
+    $exists = $false
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    gh release view $tag -R $Repo 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { $exists = $true }
+    $ErrorActionPreference = $prevEap
     $latestFlag = if ($Release.latest) { "--latest" } else { "" }
 
     if (-not $exists) {
