@@ -1,0 +1,10 @@
+# Default reviewers for pull requests
+*       @immaotianyi @naante845
+
+# Application source
+/flipper-ai-tutor/    @immaotianyi @naante845
+
+# Release & docs
+/.github/             @naante845 @immaotianyi
+/DOWNLOADS.md         @naante845
+/README.md            @immaotianyi @naante845

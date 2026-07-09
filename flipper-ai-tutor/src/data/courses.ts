@@ -1,5 +1,5 @@
 /**
- * 预置课程数据 — 手把手AI教学
+ * 预置课程数据 — 分步学习指导
  */
 import type { Course } from "@/types";
 
@@ -24,7 +24,7 @@ export const COURSES: Course[] = [
     durationMin: 10,
     icon: "card",
     steps: [
-      "拍一张门禁卡照片发给AI识别类型",
+      "拍一张门禁卡照片发给助手识别类型",
       "进入 125kHz RFID → Read",
       "把卡贴在Flipper背面读取",
       "保存卡数据并命名",

@@ -1,6 +1,6 @@
 /**
- * AI 对话主区域（增强动画版，用于抖音录屏展示）
- * - 顶部对话头：标题 "DOLPHIN AI TUTOR" + 绿色 LED + 模型/上下文信息
+ * 学习助手对话主区域
+ * - 顶部对话头：标题 "DOLPHIN GANG TOUR" + 绿色 LED + 模型/上下文信息
  * - 消息列表：AI 绿色文本前缀 [AI]，用户白底蓝框前缀 [YOU]；支持图片消息
  * - 消息中渲染按键标签（<span> 模拟物理按键样式，灰底白边内阴影）
  * - 代码块（```...```）渲染为终端风格（黑底绿字、等宽字体、边框）
@@ -240,7 +240,7 @@ const MessageBubble: React.FC<{ msg: ChatMessage; onGrow?: () => void }> = ({
 
   return (
     <div className={`chat-msg ${isAi ? "ai" : "user"}`}>
-      <span className="msg-prefix">[{isAi ? "AI" : "YOU"}]</span>
+      <span className="msg-prefix">[{isAi ? "助手" : "YOU"}]</span>
       {thinking ? (
         <ThinkingDots />
       ) : useTypewriter ? (
@@ -251,7 +251,7 @@ const MessageBubble: React.FC<{ msg: ChatMessage; onGrow?: () => void }> = ({
       {msg.imageUrl && (
         <img className="msg-image" src={msg.imageUrl} alt="screenshot" />
       )}
-      {/* AI 生成内容标识 — 符合《深度合成管理规定》第17条 */}
+      {/* 合成内容标识 — 符合《深度合成管理规定》第17条 */}
       {isAi && !msg.isStreaming && msg.content.length > 0 && (
         <span style={{
           display: "inline-block",
@@ -263,7 +263,7 @@ const MessageBubble: React.FC<{ msg: ChatMessage; onGrow?: () => void }> = ({
           borderRadius: 2,
           verticalAlign: "middle",
         }}>
-          AI生成
+          合成内容
         </span>
       )}
     </div>
@@ -390,7 +390,7 @@ export const AiChat: React.FC = () => {
             className="font-pixel"
             style={{ fontSize: 10, color: "var(--c-white)" }}
           >
-            DOLPHIN AI TUTOR
+            DOLPHIN GANG TOUR
           </span>
         </div>
         <div className="font-mono" style={{ fontSize: 12, color: "var(--c-green)" }}>
@@ -491,7 +491,7 @@ const EmptyState: React.FC<{ onPickCourse: (id: string) => void }> = ({
       DOLPHIN ONLINE
     </div>
     <div className="font-term" style={{ color: "var(--c-green)", fontSize: 18, marginBottom: 16 }}>
-      嗨！我是你的 Dolphin Gang Tour AI 导师。我可以手把手教你玩转 Flipper Zero。
+      嗨！我是 Dolphin Gang Tour 学习助手，可以手把手带你玩转 Flipper Zero。
       <br />
       点下面任一课程开始，或直接在底部输入框提问。
     </div>

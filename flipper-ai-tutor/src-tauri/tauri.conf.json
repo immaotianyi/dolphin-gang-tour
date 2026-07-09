@@ -41,7 +41,7 @@
     "copyright": "© 2026 Dolphin Gang Tour. Licensed under the MIT License.",
     "category": "Utility",
     "shortDescription": "适配 Flipper Zero 的全功能桌面伴侣应用",
-    "longDescription": "Flipper Zero 资源管理、固件刷写、AI 辅导、虚拟设备模拟一站式工具（非官方产品，与 Flipper Devices Inc. 无关联）",
+    "longDescription": "Flipper Zero 资源管理、固件刷写、学习指导、虚拟设备模拟一站式工具（非官方产品，与 Flipper Devices Inc. 无关联）",
     "resources": ["resources/*"],
     "macOS": {
       "minimumSystemVersion": "10.15"

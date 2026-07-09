@@ -369,7 +369,7 @@ export const ImportWizard: React.FC = () => {
               {/* 进度头部 */}
               <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--c-gray)" }}>
                 <div className="font-pixel text-orange blink" style={{ fontSize: 9, marginBottom: 8 }}>
-                  {done ? "导入完成！" : "光速写入中，AI 暂闭麦..."}
+                  {done ? "导入完成！" : "资源写入中，请稍候…"}
                 </div>
 
                 {/* 完成庆祝横幅 */}

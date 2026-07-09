@@ -13,7 +13,9 @@ src-tauri/gen/
 *.key
 *.p12
 *.pfx
+*.jks
 secrets/
+src-tauri/android-keystore/
 
 # OS files
 .DS_Store

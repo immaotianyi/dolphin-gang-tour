@@ -186,7 +186,7 @@ export const SettingsModal: React.FC = () => {
           className="font-pixel text-orange"
           style={{ fontSize: 9, marginBottom: 8 }}
         >
-          AI PROVIDER
+          MODEL PROVIDER
         </div>
         <div
           style={{
@@ -411,7 +411,7 @@ export const SettingsModal: React.FC = () => {
           </div>
           <div className="font-term text-dim" style={{ fontSize: 14 }}>
             本地降级模式无需联网和 API Key，使用内置 FAQ 知识库回答常见问题。
-            功能有限，建议配置在线服务商以获得完整 AI 对话体验。
+            功能有限，建议配置在线服务商以获得完整对话体验。
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 /**
  * 应用顶部标题栏
- * 左侧：LED 指示灯 + 应用标题 "FLIPPER AI TUTOR v1.0"
+ * 左侧：LED 指示灯 + 应用标题
  * 右侧：连接状态文本 + USB 信息
  * 橙色背景，黑色文字，像素字体
  */
@@ -62,7 +62,7 @@ export const TitleBar: React.FC = () => {
           className="font-pixel"
           style={{ fontSize: 12, letterSpacing: 1 }}
         >
-          FLIPPER AI TUTOR v1.0
+          DOLPHIN GANG TOUR v2.0beta
         </h1>
         {/* 非官方产品声明 */}
         <span style={{ fontSize: 10, color: "var(--c-dim)", marginLeft: 8 }}>
@@ -99,7 +99,7 @@ export const TitleBar: React.FC = () => {
         </span>
         <button
           onClick={() => setModal("settings")}
-          title="AI 设置"
+          title="模型设置"
           style={{
             background: "transparent",
             border: "1.5px solid #000",

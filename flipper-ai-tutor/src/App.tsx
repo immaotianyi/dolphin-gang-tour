@@ -883,7 +883,7 @@ const HelpModalContent: React.FC = () => {
   const { setModal } = useUiStore();
 
   const shortcuts = [
-    { keys: "Ctrl/Cmd + 1", desc: "切换到 AI 对话" },
+    { keys: "Ctrl/Cmd + 1", desc: "切换到学习助手" },
     { keys: "Ctrl/Cmd + 2", desc: "切换到资源导入" },
     { keys: "Ctrl/Cmd + 3", desc: "切换到固件管理" },
     { keys: "Ctrl/Cmd + 4", desc: "切换到故障诊断" },
@@ -893,11 +893,11 @@ const HelpModalContent: React.FC = () => {
     { keys: "Ctrl/Cmd + ,", desc: "打开设置" },
     { keys: "?", desc: "打开本帮助面板" },
     { keys: "Esc", desc: "关闭当前弹窗" },
-    { keys: "Enter", desc: "发送 AI 消息（输入框聚焦时）" },
+    { keys: "Enter", desc: "发送消息（输入框聚焦时）" },
   ];
 
   const features = [
-    { icon: "chip", name: "AI 辅导", desc: "多模型对话教学" },
+    { icon: "chip", name: "学习助手", desc: "多模型对话与课程指导" },
     { icon: "rocket", name: "一键导入", desc: "7类资源包快速导入" },
     { icon: "wrench", name: "固件刷写", desc: "双轨守护刷写" },
     { icon: "mirror", name: "屏幕镜像", desc: "实时设备画面" },
@@ -965,7 +965,7 @@ const ToolModals: React.FC<{
     { id: "pet", title: "DOLPHIN PET", node: <PetModalContent />, width: 360 },
     { id: "circuit", title: "GPIO SANDBOX", node: <CircuitModalContent />, width: 560 },
     { id: "resource", title: "RESOURCE MANAGER", node: <ResourceModalContent />, width: 560 },
-    { id: "settings", title: "AI SETTINGS", node: <SettingsModal />, width: 520 },
+    { id: "settings", title: "MODEL SETTINGS", node: <SettingsModal />, width: 520 },
     { id: "help", title: "KEYBOARD SHORTCUTS", node: <HelpModalContent />, width: 480 },
     { id: "about", title: "ABOUT", node: <AboutModal />, width: 480 },
     { id: "dashboard", title: "DASHBOARD", node: <DashboardModalContent />, width: 480 },

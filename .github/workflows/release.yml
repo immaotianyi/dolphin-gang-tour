@@ -1,0 +1,60 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v2.0.0-beta.0)"
+        required: true
+        default: "v2.0.0-beta.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "name=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Load release notes
+        id: notes
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          VER="${TAG#v}"
+          FILE=".github/release-notes/${VER}.md"
+          if [ -f "$FILE" ]; then
+            NOTES="$FILE"
+          else
+            echo "# ${TAG}" > /tmp/notes.md
+            echo "See CHANGELOG.md for details." >> /tmp/notes.md
+            NOTES="/tmp/notes.md"
+          fi
+          echo "path=$NOTES" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          gh release view "$TAG" 2>/dev/null || \
+            gh release create "$TAG" \
+              --title "Dolphin Gang Tour ${TAG#v}" \
+              --notes-file "${{ steps.notes.outputs.path }}" \
+              --draft
+
+      - name: Upload Windows installer (if present in artifacts)
+        if: false
+        run: echo "Attach platform binaries via publish-github-release.ps1 or CI artifact jobs"
