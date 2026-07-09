@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dolphin Gang Tour — 下载</title>
+  <meta name="description" content="Dolphin Gang Tour Flipper Zero 桌面伴侣 — 多版本安装包下载" />
+  <style>
+    :root {
+      --green: #339933;
+      --green-dark: #267326;
+      --bg: #f0f4f0;
+      --card: #fff;
+      --border: #d8e0d8;
+      --text: #1a1a1a;
+      --muted: #5c6b5c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      color: #fff;
+      padding: 28px 20px 32px;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+    header p { margin: 8px 0 0; opacity: 0.92; font-size: 14px; }
+    main { max-width: 880px; margin: -20px auto 40px; padding: 0 16px; }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    .hero-detected {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(51,153,51,0.35);
+    }
+    .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; transform: none; box-shadow: none; }
+    .hero-meta { margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .section {
+      margin-top: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .section-head {
+      padding: 14px 18px;
+      background: #f8faf8;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .version-block { border-bottom: 1px solid var(--border); }
+    .version-block:last-child { border-bottom: none; }
+    .version-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: #fafcfa;
+      cursor: pointer;
+      user-select: none;
+    }
+    .version-title:hover { background: #f0f7f0; }
+    .version-title h3 { margin: 0; font-size: 15px; font-weight: 600; }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e8f5e9;
+      color: var(--green-dark);
+      font-weight: 600;
+    }
+    .badge.latest { background: var(--green); color: #fff; }
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+      padding: 12px 18px 16px;
+    }
+    .dl-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .dl-card:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(51,153,51,0.12); }
+    .dl-card.recommended { border-color: var(--green); background: #f8fff8; }
+    .dl-card h4 { margin: 0; font-size: 14px; }
+    .dl-card .size { font-size: 12px; color: var(--muted); }
+    .dl-card .notes { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .btn-dl {
+      margin-top: auto;
+      background: #fff;
+      color: var(--green-dark);
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-dl:hover { background: var(--green); color: #fff; }
+    .btn-dl:disabled { opacity: 0.5; cursor: not-allowed; }
+    .empty, .loading, .error {
+      padding: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .error { color: #c0392b; }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #222;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .collapsed .platform-grid { display: none; }
+    .chevron { font-size: 12px; color: var(--muted); transition: transform 0.2s; }
+    .collapsed .chevron { transform: rotate(-90deg); }
+    .channels {
+      margin-top: 16px;
+      background: #fff8e6;
+      border: 1px solid #f0d78c;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .channels a { color: var(--green-dark); font-weight: 600; }
+    .dl-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
+    .btn-gh {
+      background: #24292f;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+    .btn-gh:hover { background: #000; color: #fff; }
+    .btn-dl { flex: 1; min-width: 80px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🐬 Dolphin Gang Tour</h1>
+    <p>Flipper Zero 桌面伴侣 · 选择版本与平台，点击即可下载</p>
+  </header>
+
+  <main>
+    <div class="hero" id="hero">
+      <div class="loading">正在加载可用版本…</div>
+    </div>
+
+    <div class="section" id="channels" style="display:none;margin-top:0;border:none;box-shadow:none;background:transparent">
+      <div class="channels">
+        <strong>官方下载渠道</strong> — 源码 <a href="https://github.com/immaotianyi/dolphin-gang-tour" target="_blank" rel="noopener">GitHub</a>
+        · Releases <a href="https://github.com/immaotianyi/dolphin-gang-tour/releases" target="_blank" rel="noopener">全部版本</a>
+        · 文档 <a href="https://github.com/immaotianyi/dolphin-gang-tour/blob/main/DOWNLOADS.md" target="_blank" rel="noopener">DOWNLOADS.md</a>
+        <br />非官方产品，与 Flipper Devices Inc. 无关联。
+      </div>
+    </div>
+
+    <div class="section" id="allVersions" style="display:none">
+      <div class="section-head">全部版本</div>
+      <div id="versionList"></div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const PLATFORM_LABELS = {
+      "windows-x86_64": "Windows 64-bit",
+      "macos-arm64": "macOS (Apple Silicon)",
+      "macos-x64": "macOS (Intel)",
+      "macos-universal": "macOS (Universal)",
+      "linux-x86_64": "Linux 64-bit",
+      "android-arm64": "Android (arm64 APK)",
+      "ios-arm64": "iOS (IPA)",
+    };
+
+    function formatVersionLabel(version) {
+      const v = String(version || "");
+      // 2.0.0-beta.0 → 2.0beta；1.2.0-beta.0 → 1.2beta（与安装包文件名一致）
+      const m = v.match(/^(\d+\.\d+)\.0-beta(?:\.\d+)?$/i);
+      if (m) return m[1] + "beta";
+      return v.replace(/^v/i, "");
+    }
+
+    function compareSemver(a, b) {
+      const pa = String(a).replace(/^v/i, "").split("-")[0].split(".").map(Number);
+      const pb = String(b).replace(/^v/i, "").split("-")[0].split(".").map(Number);
+      for (let i = 0; i < 3; i++) {
+        const da = pa[i] || 0, db = pb[i] || 0;
+        if (da > db) return 1;
+        if (da < db) return -1;
+      }
+      return 0;
+    }
+
+    function formatSize(bytes) {
+      if (!bytes) return "—";
+      const mb = bytes / (1024 * 1024);
+      return mb >= 1 ? mb.toFixed(1) + " MB" : Math.round(bytes / 1024) + " KB";
+    }
+
+    function detectPlatform() {
+      const ua = navigator.userAgent;
+      if (/Win/i.test(ua)) return "windows-x86_64";
+      if (/Mac/i.test(ua)) {
+        // Apple Silicon Macs often report same UA; offer arm64 as default on Mac
+        return "macos-arm64";
+      }
+      if (/Android/i.test(ua)) return "android-arm64";
+      if (/iPhone|iPad|iPod/i.test(ua)) return "ios-arm64";
+      if (/Linux/i.test(ua)) return "linux-x86_64";
+      return null;
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2800);
+    }
+
+    function startDownload(item) {
+      if (!item?.downloadUrl) return;
+      if (!item.fileExists) {
+        showToast("安装包暂不可用，请联系管理员");
+        return;
+      }
+      showToast("开始下载 " + (item.filename || ""));
+      const a = document.createElement("a");
+      a.href = item.downloadUrl;
+      a.setAttribute("download", item.filename || "");
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function groupByVersion(releases) {
+      const map = new Map();
+      for (const r of releases) {
+        if (!map.has(r.version)) map.set(r.version, []);
+        map.get(r.version).push(r);
+      }
+      return [...map.entries()]
+        .sort((a, b) => compareSemver(b[0], a[0]))
+        .map(([version, items]) => ({
+          version,
+          items: items.sort((a, b) => (a.platform || "").localeCompare(b.platform || "")),
+        }));
+    }
+
+    function findBest(releases, platform, version) {
+      const available = releases.filter((r) => r.fileExists && r.downloadUrl);
+      if (version) {
+        const exact = available.find((r) => r.version === version && r.platform === platform);
+        if (exact) return exact;
+      }
+      const forPlatform = available.filter((r) => r.platform === platform);
+      if (!forPlatform.length) return null;
+      forPlatform.sort((a, b) => compareSemver(b.version, a.version));
+      return forPlatform[0];
+    }
+
+    function renderHero(releases, detected, latestVersion) {
+      const hero = document.getElementById("hero");
+      const best = detected ? findBest(releases, detected) : null;
+      const label = detected ? (PLATFORM_LABELS[detected] || detected) : "您的系统";
+
+      if (!releases.length) {
+        hero.innerHTML = '<div class="empty">暂无可用安装包，请稍后再试。</div>';
+        return;
+      }
+
+      const target = best || releases.find((r) => r.fileExists) || releases[0];
+      const platLabel = PLATFORM_LABELS[target.platform] || target.platformLabel || target.platform;
+
+      hero.innerHTML = `
+        <div class="hero-detected">检测到 ${label} · 推荐版本 <strong>v${formatVersionLabel(target.version)}</strong></div>
+        <button class="btn-primary" id="heroBtn" ${target.fileExists ? "" : "disabled"}>
+          ⬇ 下载 ${platLabel} · v${formatVersionLabel(target.version)}
+        </button>
+        <div class="hero-meta">${target.filename || ""} · ${formatSize(target.fileSize)}</div>
+      `;
+      document.getElementById("heroBtn").onclick = () => startDownload(target);
+    }
+
+    function renderVersionList(groups, detected, latestVersion) {
+      const container = document.getElementById("versionList");
+      const section = document.getElementById("allVersions");
+      section.style.display = "block";
+
+      container.innerHTML = groups.map((g, idx) => {
+        const isLatest = g.version === latestVersion;
+        const collapsed = idx > 0 ? "collapsed" : "";
+        const cards = g.items.map((item) => {
+          const rec = detected && item.platform === detected && isLatest;
+          const gh = item.githubDownloadUrl;
+          const ghBtn = gh
+            ? `<a class="btn-gh" href="${gh}" target="_blank" rel="noopener">GitHub</a>`
+            : "";
+          return `
+            <div class="dl-card ${rec ? "recommended" : ""}">
+              <h4>${item.platformLabel || PLATFORM_LABELS[item.platform] || item.platform}</h4>
+              <div class="size">${item.filename || ""} · ${formatSize(item.fileSize)}</div>
+              ${item.notes ? `<div class="notes">${item.notes}</div>` : ""}
+              <div class="dl-actions">
+                <button class="btn-dl" data-v="${item.version}" data-p="${item.platform}" ${item.fileExists ? "" : "disabled"}>
+                  ${item.fileExists ? "镜像下载" : "不可用"}
+                </button>
+                ${ghBtn}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="version-block ${collapsed}" data-version="${g.version}">
+            <div class="version-title" onclick="this.parentElement.classList.toggle('collapsed')">
+              <h3>v${formatVersionLabel(g.version)} ${isLatest ? '<span class="badge latest">最新</span>' : '<span class="badge">历史版本</span>'}</h3>
+              <span class="chevron">▼</span>
+            </div>
+            <div class="platform-grid">${cards}</div>
+          </div>
+        `;
+      }).join("");
+
+      container.querySelectorAll(".btn-dl").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const v = btn.dataset.v;
+          const p = btn.dataset.p;
+          const item = groups.flatMap((g) => g.items).find((r) => r.version === v && r.platform === p);
+          if (item) startDownload(item);
+        });
+      });
+    }
+
+    async function init() {
+      const params = new URLSearchParams(location.search);
+      const wantVersion = params.get("version") || params.get("v");
+      const wantPlatform = params.get("platform") || params.get("p");
+      const auto = params.get("auto") === "1" || params.get("download") === "1";
+
+      try {
+        const res = await fetch("/api/v1/releases");
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || "加载失败");
+
+        const releases = (json.data || []).filter((r) => r.enabled !== false);
+        const detected = wantPlatform ? wantPlatform : detectPlatform();
+        const groups = groupByVersion(releases);
+        const latestVersion = groups[0]?.version || null;
+
+        renderHero(releases, detected, latestVersion);
+        renderVersionList(groups, detected, latestVersion);
+        document.getElementById("channels").style.display = "block";
+
+        if (auto && detected) {
+          const item = findBest(releases, wantPlatform ? normalizeQueryPlatform(wantPlatform) : detected, wantVersion);
+          if (item) setTimeout(() => startDownload(item), 400);
+        } else if (wantVersion && wantPlatform) {
+          const item = findBest(releases, normalizeQueryPlatform(wantPlatform), wantVersion);
+          if (item) document.getElementById("heroBtn")?.click();
+        }
+      } catch (err) {
+        document.getElementById("hero").innerHTML = `<div class="error">加载失败：${err.message}</div>`;
+      }
+    }
+
+    function normalizeQueryPlatform(raw) {
+      const p = String(raw || "").toLowerCase();
+      if (p.includes("win")) return "windows-x86_64";
+      if (p.includes("arm")) return "macos-arm64";
+      if (p.includes("x64") || p.includes("intel")) return "macos-x64";
+      if (p.includes("mac")) return "macos-universal";
+      if (p.includes("linux")) return "linux-x86_64";
+      return raw;
+    }
+
+    init();
+  </script>
+</body>
+</html>
