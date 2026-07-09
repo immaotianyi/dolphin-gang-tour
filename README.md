@@ -1,10 +1,33 @@
-# FlipperZero AI Tutor
+<div align="center">
 
-> Flipper Zero 全功能桌面伴侣应用 —— 资源管理、固件刷写、AI 辅导、虚拟设备模拟，一站式搞定。
+# 🐬 Dolphin Gang Tour
 
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)]()
-[![Framework](https://img.shields.io/badge/framework-Tauri%202.0%20%2B%20React%2018-orange)]()
-[![Language](https://img.shields.io/badge/lang-Rust%20%2B%20TypeScript-red)]()
+**Flipper Zero 全功能桌面伴侣 · 资源管理 · 固件刷写 · AI 辅导 · 虚拟设备**
+
+[![Release](https://img.shields.io/github/v/release/immaotianyi/dolphin-gang-tour?label=release)](https://github.com/immaotianyi/dolphin-gang-tour/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20iOS-blue)]()
+[![Framework](https://img.shields.io/badge/framework-Tauri%202%20%2B%20React%2018-orange)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
+
+**[English README](./README_EN.md)** · **[下载 Releases](https://github.com/immaotianyi/dolphin-gang-tour/releases)** · **[在线下载](http://106.15.105.100:3920/download)** · **[更新日志](./flipper-ai-tutor/CHANGELOG.md)**
+
+</div>
+
+---
+
+## 📥 下载安装
+
+| 平台 | 安装包 | 说明 |
+|------|--------|------|
+| **Windows x64** | [Setup.exe](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | NSIS 向导 · 中英文 · EULA |
+| **macOS Apple Silicon** | [arm64.dmg](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | 拖入 Applications |
+| **macOS Intel** | [x64.dmg](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | 拖入 Applications |
+| **Android arm64** | [APK](https://github.com/immaotianyi/dolphin-gang-tour/releases/latest) | 虚拟设备 + USB 拓展坞实机 |
+| **Linux x64** | deb / AppImage | GitHub Actions 或 WSL 构建 |
+
+> **Beta 授权码：** `DGT-BETA-2026`（联网仅校验版本，不收集 Flipper 设备/NFC 数据）
+
+> ⚠️ **非官方产品** — 与 Flipper Devices Inc. 无任何关联。请仅通过 [GitHub Releases](https://github.com/immaotianyi/dolphin-gang-tour/releases) 或上述官方下载页获取安装包。
 
 ---
 
@@ -27,9 +50,9 @@
 
 ## 简介
 
-FlipperZero AI Tutor 是一款为 Flipper Zero 硬件爱好者打造的桌面伴侣应用。它不替代 qFlipper，而是在其基础上提供更丰富的功能：一键资源导入、多固件刷写、实时屏幕镜像、AI 智能辅导、虚拟设备模拟等。
+**Dolphin Gang Tour**（原 FlipperZero AI Tutor）是一款为 Flipper Zero 硬件爱好者打造的桌面伴侣应用。它不替代 qFlipper，而是在其基础上提供更丰富的功能：一键资源导入、多固件刷写、实时屏幕镜像、AI 智能辅导、虚拟设备模拟等。
 
-**无需 Flipper Zero 硬件即可体验** —— 内置虚拟设备模式，在 PC 上模拟完整设备交互链路。
+**无需 Flipper Zero 硬件即可体验** —— 内置虚拟设备模式，在 PC / 手机 / 平板上模拟完整设备交互链路。
 
 ---
 
@@ -209,8 +232,8 @@ flipperzero/
 
 ```bash
 # 克隆仓库
-git clone https://github.com/immaotianyi/flipperzero-ai-tutor.git
-cd flipperzero-ai-tutor/flipper-ai-tutor
+git clone https://github.com/immaotianyi/dolphin-gang-tour.git
+cd dolphin-gang-tour/flipper-ai-tutor
 
 # 安装前端依赖
 npm install
@@ -415,8 +438,9 @@ AI 对话内容自动脱敏，检测并替换以下敏感信息：
 - [ ] 成就系统完整实现
 - [ ] 桌宠交互系统
 - [ ] GPIO 可视化配置工具
-- [ ] GitHub Release 资源包自动下载
-- [ ] 多语言支持（i18n）
+- [x] GitHub Release 安装包发布
+- [x] 仓库多语言文档（中文 / English）
+- [ ] 应用内多语言（i18n）
 
 ---
 
