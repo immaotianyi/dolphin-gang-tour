@@ -1,0 +1,49 @@
+[package]
+name = "lucy-desktop"
+version = "0.7.0-rc1"
+description = "Lucy Desktop — AI-Enhanced Pocket Multi-Tool"
+authors = ["Lucy Team"]
+edition = "2021"
+
+[lib]
+name = "lucy_desktop_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+parking_lot = "0.12"
+tokio = { version = "1", features = ["full"] }
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+rmp-serde = "1"
+crc16 = "0.4"
+async-trait = "0.1"
+serialport = "4"
+log = "0.4"
+base64 = "0.22"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures-util = "0.3"
+regex = "1"
+rusqlite = { version = "0.31", features = ["bundled"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+dirs = "5"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

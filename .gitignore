@@ -1,17 +1,22 @@
 # ==================== 依赖目录 ====================
 node_modules/
 flipper-ai-tutor/node_modules/
+lucy/desktop/node_modules/
 
 # ==================== 构建产物 ====================
 # Rust 编译产物
 flipper-ai-tutor/src-tauri/target/
 flipper-ai-tutor/src-tauri/Cargo.lock
+lucy/desktop/src-tauri/target/
+lucy/desktop/src-tauri/Cargo.lock
 
 # 前端构建产物
 flipper-ai-tutor/dist/
+lucy/desktop/dist/
 
 # Tauri 构建产物
 flipper-ai-tutor/src-tauri/gen/
+lucy/desktop/src-tauri/gen/
 
 # ==================== IDE / 编辑器 ====================
 .vscode/
@@ -46,5 +51,10 @@ $RECYCLE.BIN/
 # ==================== TRAE 工作目录 ====================
 .trae-html-share-packages/
 flipperzero-ai-tutor-fixed.zip
-flipperzero-ai-tutor-fixed.zip
-flipperzero-ai-tutor-fixed.zip
+
+# ==================== Chrome 调试缓存 ====================
+.chrome-profile*/
+*.zip
+
+# ==================== Lucy 本地数据 ====================
+.lucy/
