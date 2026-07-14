@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucy Desktop — Phase 2 概览 | 硬件模块</title>
+<style>
+  :root {
+    --bg: #0A0E14; --bg2: #11151C; --bg3: #1A1F28;
+    --ink: #E6E1CF; --muted: #6B7280;
+    --accent: #F97316; --accent2: #39BAE6;
+    --green: #7FD962; --red: #F26D78; --yellow: #FFB454;
+    --rule: #2D333B; --code-bg: #0D1117;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Menlo','Monaco','Courier New',monospace; font-size: 14px; line-height: 1.6; }
+  .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .header { border-bottom: 2px solid var(--accent); padding-bottom: 1rem; margin-bottom: 2rem; }
+  .header .tag { display: inline-block; background: var(--accent); color: var(--bg); padding: 2px 8px; font-size: 11px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; }
+  .header h1 { font-size: 28px; color: var(--ink); letter-spacing: -0.5px; }
+  .header .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .section { margin-bottom: 2rem; }
+  .section-title { color: var(--accent); font-size: 16px; border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+  .status-bar { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .status-item { background: var(--bg2); border: 1px solid var(--rule); padding: 6px 12px; font-size: 12px; }
+  .status-item .label { color: var(--muted); }
+  .status-item .value { color: var(--green); font-weight: bold; }
+  .status-item .value.warn { color: var(--yellow); }
+  .code-block { background: var(--code-bg); border: 1px solid var(--rule); margin: 1rem 0; overflow-x: auto; }
+  .code-header { background: var(--bg3); padding: 6px 12px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; }
+  .code-header .lang { color: var(--accent2); font-weight: bold; }
+  pre { padding: 12px 16px; font-size: 12px; line-height: 1.5; overflow-x: auto; }
+  .kw { color: var(--red); } .ty { color: var(--accent2); } .fn { color: var(--yellow); }
+  .str { color: var(--green); } .num { color: var(--accent2); }
+  .cmt { color: var(--muted); font-style: italic; } .attr { color: var(--yellow); }
+  .annotation { background: var(--bg2); border-left: 2px solid var(--accent2); padding: 8px 12px; margin: 8px 0; font-size: 12px; color: var(--muted); }
+  .annotation strong { color: var(--accent2); }
+  .annotation .arrow { color: var(--accent); margin-right: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 12px; }
+  th { background: var(--bg3); color: var(--accent); text-align: left; padding: 6px 10px; border: 1px solid var(--rule); font-size: 11px; text-transform: uppercase; }
+  td { padding: 6px 10px; border: 1px solid var(--rule); color: var(--ink); }
+  tr:nth-child(even) td { background: var(--bg2); }
+  code { background: var(--bg3); color: var(--accent2); padding: 1px 4px; font-size: 12px; }
+  .feat-list { list-style: none; padding: 0; }
+  .feat-list li { padding: 4px 0; padding-left: 20px; position: relative; font-size: 13px; }
+  .feat-list li::before { content: '\25B8'; color: var(--accent); position: absolute; left: 4px; }
+  .feat-list li.done::before { color: var(--green); content: '\2713'; }
+  .feat-list li.todo::before { color: var(--yellow); content: '\25CB'; }
+  .footer { border-top: 1px solid var(--rule); margin-top: 2rem; padding-top: 1rem; color: var(--muted); font-size: 11px; text-align: center; }
+  .diagram { background: var(--bg2); border: 1px solid var(--rule); padding: 16px; margin: 1rem 0; font-family: 'Menlo',monospace; font-size: 11px; line-height: 1.5; color: var(--ink); overflow-x: auto; white-space: pre; }
+  .diagram .accent { color: var(--accent); } .diagram .green { color: var(--green); }
+  .diagram .blue { color: var(--accent2); } .diagram .yellow { color: var(--yellow); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <span class="tag">PHASE 2 COMPLETE</span>
+  <h1>硬件模块 — 6 模块 + 安全审查</h1>
+  <div class="subtitle">Lucy Desktop Rust 后端 | 9 文件新建 | cargo check ✓ 0 error, 31 warning</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item"><span class="label">状态</span> <span class="value">编译通过</span></div>
+  <div class="status-item"><span class="label">Tauri 命令</span> <span class="value">37 (Phase 1: 17 → +20)</span></div>
+  <div class="status-item"><span class="label">新建文件</span> <span class="value">9</span></div>
+  <div class="status-item"><span class="label">单元测试</span> <span class="value">10</span></div>
+  <div class="status-item"><span class="label">安全规则</span> <span class="value">25+6+9</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">① 模块架构总览</div>
+  <div class="diagram"><span class="accent">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="accent">│</span>              <span class="yellow">Lucy Desktop — Phase 2 Hardware Modules</span>                <span class="accent">│</span>
+<span class="accent">│</span>                                                                <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">Tauri Commands (37 total)</span>                                     <span class="accent">│</span>
+<span class="accent">│</span>    │                                                          <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                          <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">commands.rs</span> ── routes to ──▶ <span class="green">modules/</span>                      <span class="accent">│</span>
+<span class="accent">│</span>    │                              │                              <span class="accent">│</span>
+<span class="accent">│</span>    │    ┌───────────┬──────────┬──────────┬─────────┬────────┐ <span class="accent">│</span>
+<span class="accent">│</span>    │    ▼           ▼          ▼          ▼         ▼        ▼ <span class="accent">│</span>
+<span class="accent">│</span>    │  <span class="yellow">nfc.rs</span>   <span class="yellow">subghz.rs</span> <span class="yellow">badusb.rs</span> <span class="yellow">gpio.rs</span> <span class="yellow">ir.rs</span> <span class="yellow">screen.rs</span> <span class="accent">│</span>
+<span class="accent">│</span>    │    │           │          │          │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │    │  identify  │ identify │ validate │ pin     │ IR     │ <span class="accent">│</span>
+<span class="accent">│</span>    │    │  card type │ protocol │ script   │ layout  │ proto  │ <span class="accent">│</span>
+<span class="accent">│</span>    │    │  read/write│ scan/rx  │ execute  │ ADC     │ learn  │ <span class="accent">│</span>
+<span class="accent">│</span>    │    │  emulate   │ tx/save  │ list     │ capture │ preset │ <span class="accent">│</span>
+<span class="accent">│</span>    │    │           │          │          │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │    └─────┬─────┴──────────┘          │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │          │                            │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │          ▼                            │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │  <span class="red">security/badusb_guard.rs</span>          │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │  25 DANGER + 6 WARN + 9 SAFE        │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    │                                    │         │        │ <span class="accent">│</span>
+<span class="accent">│</span>    └──────────────────────────────────┘         │        │ <span class="accent">│</span>
+<span class="accent">│</span>                    │                             │        │ <span class="accent">│</span>
+<span class="accent">│</span>                    ▼                             ▼        ▼ <span class="accent">│</span>
+<span class="accent">│</span>              <span class="blue">TransportManager → DeviceTransport trait</span>      <span class="accent">│</span>
+<span class="accent">│</span>              <span class="blue">[UsbTransport | VirtualDevice]</span>                 <span class="accent">│</span>
+<span class="accent">└──────────────────────────────────────────────────────────────┘</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">② 新建文件清单</div>
+  <table>
+    <tr><th>文件</th><th>行数</th><th>功能</th></tr>
+    <tr><td><code>security/mod.rs</code></td><td>10</td><td>安全模块声明</td></tr>
+    <tr><td><code>security/badusb_guard.rs</code></td><td>270</td><td>DuckyScript AST 审查 — 25 危险拦截 + 6 可疑警告 + 9 白名单</td></tr>
+    <tr><td><code>device/modules/mod.rs</code></td><td>7</td><td>模块声明</td></tr>
+    <tr><td><code>device/modules/nfc.rs</code></td><td>200</td><td>NFC 读卡器 — detect/read/write/emulate + 卡片类型识别</td></tr>
+    <tr><td><code>device/modules/subghz.rs</code></td><td>195</td><td>SubGHz 射频 — scan/rx/tx/save + 协议识别 + 频段验证</td></tr>
+    <tr><td><code>device/modules/badusb.rs</code></td><td>130</td><td>BadUSB 执行 — validate/execute/list + 内置示例脚本</td></tr>
+    <tr><td><code>device/modules/gpio.rs</code></td><td>175</td><td>GPIO 控制 — 8 引脚 + ADC + 逻辑分析仪采样</td></tr>
+    <tr><td><code>device/modules/ir.rs</code></td><td>220</td><td>红外遥控 — 6 协议 + 3 遥控器预设 + learn/transmit</td></tr>
+    <tr><td><code>device/modules/screen.rs</code></td><td>103</td><td>屏幕镜像 — RGB565 帧获取 + 编解码辅助</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">③ 核心代码 — badusb_guard.rs (安全审查)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>设计要点</strong>: 三级审查体系。STRING 命令的多行拼接通过 <code>string_buffer</code> 追踪累积，先匹配白名单（跳过危险检查），再匹配 25 项危险模式。<code>ENTER</code> 后检查是否刚打开了终端，防止命令执行。</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/security/badusb_guard.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 25 项危险命令拦截</span>
+<span class="kw">const</span> <span class="constant">DANGER_PATTERNS</span>: &[(&amp;<span class="ty">str</span>, &amp;<span class="ty">str</span>, &amp;<span class="ty">str</span>)] = &amp;[
+    <span class="cmt">// 系统破坏 (8)</span>
+    (<span class="str">"rm -rf"</span>, <span class="str">"D001"</span>, <span class="str">"Recursive force delete"</span>),
+    (<span class="str">"format "</span>, <span class="str">"D002"</span>, <span class="str">"Disk format command"</span>),
+    <span class="cmt">// ... 共 25 项</span>
+];
+
+<span class="cmt">// 审查主函数</span>
+<span class="kw">pub fn</span> <span class="fn">analyze</span>(script: &amp;<span class="ty">str</span>) -&gt; <span class="ty">GuardReport</span> {
+    <span class="kw">let</span> <span class="kw">mut</span> string_buffer = <span class="ty">String</span>::<span class="fn">new</span>();  <span class="cmt">// 追踪 STRING 拼接</span>
+
+    <span class="kw">for</span> (i, line) <span class="kw">in</span> lines.<span class="fn">iter</span>().<span class="fn">enumerate</span>() {
+        <span class="kw">if</span> lower.<span class="fn">starts_with</span>(<span class="str">"string "</span>) {
+            string_buffer.<span class="fn">push_str</span>(&amp;text);
+            <span class="cmt">// 1. 先检查白名单</span>
+            <span class="kw">let</span> is_safe = <span class="constant">SAFE_PATTERNS</span>.<span class="fn">iter</span>()
+                .<span class="fn">any</span>(|(pat, _, _)| string_buffer.<span class="fn">contains</span>(pat));
+            <span class="kw">if</span> !is_safe {
+                <span class="cmt">// 2. 匹配 25 项危险模式</span>
+                <span class="kw">for</span> (pattern, rule_id, desc) <span class="kw">in</span> <span class="constant">DANGER_PATTERNS</span> {
+                    <span class="kw">if</span> string_buffer.<span class="fn">contains</span>(pattern) {
+                        issues.<span class="fn">push</span>(<span class="ty">GuardIssue</span> {
+                            severity: <span class="ty">Severity::Danger</span>, ...
+                        });
+                    }
+                }
+                <span class="cmt">// 3. URL + 下载关键词组合检测</span>
+                <span class="kw">if</span> string_buffer.<span class="fn">contains</span>(<span class="str">"http"</span>) &amp;&amp; string_buffer.<span class="fn">contains</span>(<span class="str">"download"</span>) {
+                    issues.<span class="fn">push</span>(<span class="ty">GuardIssue</span> { rule_id: <span class="str">"D026"</span>, ... });
+                }
+            }
+        }
+        <span class="cmt">// 4. 检查 ENTER 后的命令执行</span>
+        <span class="kw">if</span> lower == <span class="str">"enter"</span> &amp;&amp; prev.<span class="fn">contains</span>(<span class="str">"terminal"</span>) {
+            issues.<span class="fn">push</span>(<span class="ty">GuardIssue</span> { rule_id: <span class="str">"D027"</span>, ... });
+        }
+    }
+    <span class="ty">GuardReport</span> { passed: danger_count == <span class="num">0</span>, ... }
+}</pre>
+  </div>
+  <div class="annotation"><span class="arrow">→</span> <strong>安全门控流程</strong>: 前端调用 <code>badusb_validate</code> → 返回 <code>GuardReport</code> → 如果 <code>danger_count &gt; 0</code> → 前端弹窗确认 → 用户确认后 <code>badusb_execute</code> 带 <code>force=true</code> → 设备执行 HID 注入。</div>
+</div>
+
+<div class="section">
+  <div class="section-title">④ 核心代码 — NFC 卡片类型识别</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/device/modules/nfc.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 已知卡片类型数据库: (UID前缀, 类型, 厂商, ATQA, SAK)</span>
+<span class="kw">const</span> <span class="constant">CARD_DATABASE</span>: &[(&amp;<span class="ty">str</span>, &amp;<span class="ty">str</span>, &amp;<span class="ty">str</span>, <span class="ty">u16</span>, <span class="ty">u8</span>)] = &amp;[
+    (<span class="str">"04"</span>, <span class="str">"NTAG213"</span>,   <span class="str">"NXP"</span>, <span class="num">0x0044</span>, <span class="num">0x00</span>),
+    (<span class="str">"08"</span>, <span class="str">"Mifare Classic 1K"</span>, <span class="str">"NXP"</span>, <span class="num">0x0004</span>, <span class="num">0x08</span>),
+    (<span class="str">"20"</span>, <span class="str">"Mifare DESFire"</span>, <span class="str">"NXP"</span>, <span class="num">0x0344</span>, <span class="num">0x20</span>),
+    <span class="cmt">// ... 共 8 种卡片类型</span>
+];
+
+<span class="cmt">// 通过 UID 前缀 + ATQA/SAK 识别卡片</span>
+<span class="kw">fn</span> <span class="fn">identify_card</span>(uid: &amp;<span class="ty">str</span>, atqa: <span class="ty">u16</span>, sak: <span class="ty">u8</span>) -&gt; (<span class="ty">String</span>, <span class="ty">String</span>) {
+    <span class="kw">let</span> uid_prefix = uid.<span class="fn">split</span>(<span class="str">':'</span>).<span class="fn">next</span>().<span class="fn">unwrap_or</span>(<span class="str">""</span>).<span class="fn">to_lowercase</span>();
+    <span class="kw">for</span> (prefix, card_type, manufacturer, exp_atqa, exp_sak) <span class="kw">in</span> <span class="constant">CARD_DATABASE</span> {
+        <span class="kw">if</span> uid_prefix.<span class="fn">starts_with</span>(prefix) &amp;&amp; (atqa == *exp_atqa || sak == *exp_sak) {
+            <span class="kw">return</span> (card_type.<span class="fn">to_string</span>(), manufacturer.<span class="fn">to_string</span>());
+        }
+    }
+    (<span class="str">"Unknown"</span>.<span class="fn">to_string</span>(), <span class="str">"Unknown"</span>.<span class="fn">to_string</span>())
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑤ 核心代码 — SubGHz 协议识别 + 频段验证</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/device/modules/subghz.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 已知协议数据库: (频率, 协议名, 描述)</span>
+<span class="kw">pub const</span> <span class="constant">KNOWN_PROTOCOLS</span>: &[(<span class="ty">u32</span>, &amp;<span class="ty">str</span>, &amp;<span class="ty">str</span>)] = &amp;[
+    (<span class="num">433_920_000</span>, <span class="str">"PT2262/EV1527"</span>, <span class="str">"Wireless doorbell / remote control"</span>),
+    (<span class="num">315_000_000</span>, <span class="str">"Car Keyless"</span>, <span class="str">"Vehicle remote entry system"</span>),
+    (<span class="num">433_075_000</span>, <span class="str">"KeeLoq"</span>, <span class="str">"Rolling code remote (encrypted)"</span>),
+    <span class="cmt">// ... 共 7 种协议</span>
+];
+
+<span class="cmt">// 频率 ±500kHz 容差匹配</span>
+<span class="kw">pub fn</span> <span class="fn">identify_protocol</span>(freq: <span class="ty">u32</span>) -&gt; <span class="ty">Option</span>&lt;(&amp;<span class="kw">static</span> <span class="ty">str</span>, &amp;<span class="kw">static</span> <span class="ty">str</span>)&gt; {
+    <span class="constant">KNOWN_PROTOCOLS</span>.<span class="fn">iter</span>()
+        .<span class="fn">find</span>(|(f, _, _)| (*f <span class="kw">as</span> <span class="ty">i64</span> - freq <span class="kw">as</span> <span class="ty">i64</span>).<span class="fn">abs</span>() &lt; <span class="num">500_000</span>)
+        .<span class="fn">map</span>(|(_, name, desc)| (*name, *desc))
+}
+
+<span class="cmt">// 验证频率是否在合法频段内</span>
+<span class="kw">pub fn</span> <span class="fn">is_legal_frequency</span>(freq: <span class="ty">u32</span>) -&gt; <span class="ty">bool</span> {
+    <span class="constant">FREQ_BANDS</span>.<span class="fn">iter</span>().<span class="fn">any</span>(|(start, end, _)| freq &gt;= *start &amp;&amp; freq &lt;= *end)
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑥ 核心代码 — GPIO 引脚布局 + 逻辑分析仪</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/device/modules/gpio.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 8 引脚布局 — ESP32-S3 + TXB0108 电平转换器</span>
+<span class="kw">pub fn</span> <span class="fn">pin_layout</span>() -&gt; <span class="ty">Vec</span>&lt;<span class="ty">PinInfo</span>&gt; {
+    <span class="macro">vec!</span>[
+        <span class="ty">PinInfo</span> { id: <span class="num">1</span>, name: <span class="str">"GPIO1"</span>.<span class="fn">into</span>(), signal: <span class="str">"ADC1_CH0"</span>.<span class="fn">into</span>(), direction: <span class="ty">Input</span>, .. },
+        <span class="ty">PinInfo</span> { id: <span class="num">3</span>, name: <span class="str">"GPIO3"</span>.<span class="fn">into</span>(), signal: <span class="str">"UART_TX"</span>.<span class="fn">into</span>(), direction: <span class="ty">Output</span>, .. },
+        <span class="cmt">// ... 共 8 引脚</span>
+    ]
+}
+
+<span class="cmt">// 逻辑分析仪采样 — 统计电平跳变次数</span>
+<span class="kw">pub async fn</span> <span class="fn">capture</span>(tm, pin, sample_rate, duration_ms) -&gt; <span class="ty">LucyResult</span>&lt;<span class="ty">LogicCapture</span>&gt; {
+    <span class="kw">let</span> response = transport.<span class="fn">send_command</span>(<span class="str">"gpio"</span>, <span class="str">"capture"</span>, ...).<span class="kw">await</span>?;
+    <span class="kw">let</span> transitions = samples.<span class="fn">windows</span>(<span class="num">2</span>)
+        .<span class="fn">filter</span>(|w| w[<span class="num">0</span>] != w[<span class="num">1</span>])  <span class="cmt">// 检测电平跳变</span>
+        .<span class="fn">count</span>() <span class="kw">as</span> <span class="ty">u32</span>;
+    <span class="ty">Ok</span>(<span class="ty">LogicCapture</span> { pin, sample_rate, duration_ms, samples, transitions })
+}</pre>
+  </div>
+  <div class="annotation"><span class="arrow">→</span> <strong>安全提示</strong>: TXB0108 每通道 ~4kΩ 内阻，仅适合逻辑信号 (&lt;5mA)。MODULE_TEMPLATES 标注了 LED/Servo/Relay 的安全等级。</div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑦ 核心代码 — IR 协议数据库 + 遥控器预设</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/device/modules/ir.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 6 种 IR 协议</span>
+<span class="kw">pub fn</span> <span class="fn">ir_protocols</span>() -&gt; <span class="ty">Vec</span>&lt;<span class="ty">ProtocolInfo</span>&gt; {
+    <span class="macro">vec!</span>[
+        <span class="ty">ProtocolInfo</span> { name: <span class="str">"NEC"</span>,     frequency: <span class="num">38_000</span>, bits: <span class="num">32</span>, encoding: <span class="str">"PPM"</span>, ... },
+        <span class="ty">ProtocolInfo</span> { name: <span class="str">"RC5"</span>,     frequency: <span class="num">36_000</span>, bits: <span class="num">14</span>, encoding: <span class="str">"Manchester"</span>, ... },
+        <span class="ty">ProtocolInfo</span> { name: <span class="str">"Samsung"</span>, frequency: <span class="num">38_000</span>, bits: <span class="num">32</span>, encoding: <span class="str">"PPM"</span>, ... },
+        <span class="ty">ProtocolInfo</span> { name: <span class="str">"Sony"</span>,    frequency: <span class="num">40_000</span>, bits: <span class="num">12</span>, encoding: <span class="str">"PWM"</span>, ... },
+        <span class="cmt">// + RC6, Raw</span>
+    ]
+}
+
+<span class="cmt">// 遥控器预设: (设备名, 地址, [(按键码, 按键名)])</span>
+<span class="kw">const</span> <span class="constant">COMMON_REMOTES</span>: &[(&amp;<span class="ty">str</span>, <span class="ty">u16</span>, &amp;[(<span class="ty">u16</span>, &amp;<span class="ty">str</span>)])] = &amp;[
+    (<span class="str">"TV (Samsung)"</span>, <span class="num">0x07</span>, &amp;[
+        (<span class="num">0x02</span>, <span class="str">"Power"</span>), (<span class="num">0x0B</span>, <span class="str">"Volume Up"</span>), (<span class="num">0x1A</span>, <span class="str">"OK"</span>),
+        (<span class="num">0x45</span>, <span class="str">"Up"</span>), (<span class="num">0x4B</span>, <span class="str">"Back"</span>), <span class="cmt">// ... 共 14 键</span>
+    ]),
+    (<span class="str">"TV (LG)"</span>, <span class="num">0x04</span>, &amp;[...]),
+    (<span class="str">"AC (Generic)"</span>, <span class="num">0x00</span>, &amp;[...]),
+];</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑧ Tauri 命令总表 (37)</div>
+  <table>
+    <tr><th>模块</th><th>命令</th><th>数量</th></tr>
+    <tr><td>设备</td><td><code>device_scan</code> <code>device_connect</code> <code>device_disconnect</code> <code>device_get_info</code> <code>device_refresh_info</code></td><td>5</td></tr>
+    <tr><td>NFC</td><td><code>nfc_detect</code> <code>nfc_read_uid</code> <code>nfc_read_card</code> <code>nfc_write_block</code> <code>nfc_emulate</code> <code>nfc_list_saved</code></td><td>6</td></tr>
+    <tr><td>SubGHz</td><td><code>subghz_scan</code> <code>subghz_rx</code> <code>subghz_tx</code> <code>subghz_save</code> <code>subghz_list_saved</code> <code>subghz_replay</code> <code>subghz_identify</code></td><td>7</td></tr>
+    <tr><td>GPIO</td><td><code>gpio_scan</code> <code>gpio_set_direction</code> <code>gpio_set_value</code> <code>gpio_read</code> <code>gpio_read_adc</code> <code>gpio_capture</code></td><td>6</td></tr>
+    <tr><td>IR</td><td><code>ir_learn</code> <code>ir_transmit</code> <code>ir_list_protocols</code> <code>ir_list_saved</code> <code>ir_save</code> <code>ir_get_presets</code></td><td>6</td></tr>
+    <tr><td>BadUSB</td><td><code>badusb_validate</code> <code>badusb_execute</code> <code>badusb_list_scripts</code> <code>badusb_get_script</code> <code>badusb_save_script</code></td><td>5</td></tr>
+    <tr><td>Screen</td><td><code>screen_get_frame</code></td><td>1</td></tr>
+    <tr><td>AI</td><td><code>ai_send_message</code></td><td>1</td></tr>
+    <tr><td>系统</td><td><code>get_app_state</code> <code>close_window</code> <code>minimize_window</code></td><td>3</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑨ 单元测试 (10)</div>
+  <table>
+    <tr><th>模块</th><th>测试</th><th>验证内容</th></tr>
+    <tr><td>badusb_guard</td><td><code>test_safe_script</code></td><td>白名单脚本通过审查</td></tr>
+    <tr><td>badusb_guard</td><td><code>test_dangerous_script</code></td><td>PowerShell -enc 被拦截</td></tr>
+    <tr><td>badusb_guard</td><td><code>test_format_command</code></td><td>format 命令被拦截</td></tr>
+    <tr><td>nfc</td><td><code>test_identify_ntag</code></td><td>NTAG213 UID 04: 前缀识别</td></tr>
+    <tr><td>nfc</td><td><code>test_identify_mifare_classic</code></td><td>Mifare Classic 1K ATQA/SAK 识别</td></tr>
+    <tr><td>subghz</td><td><code>test_identify_protocol</code></td><td>433.92MHz → PT2262/EV1527</td></tr>
+    <tr><td>subghz</td><td><code>test_legal_frequency</code></td><td>433/315MHz 合法，500MHz 非法</td></tr>
+    <tr><td>gpio</td><td><code>test_scan_pins</code></td><td>8 引脚布局正确</td></tr>
+    <tr><td>ir</td><td><code>test_list_protocols</code></td><td>≥5 协议，包含 NEC</td></tr>
+    <tr><td>ir</td><td><code>test_remote_presets</code></td><td>遥控器预设不为空</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑩ Phase 2 功能完成度</div>
+  <ul class="feat-list">
+    <li class="done">BadUSB 安全审查 — 25 危险拦截 + 6 可疑警告 + 9 白名单 + URL 下载检测 + ENTER 后门检测</li>
+    <li class="done">NFC 模块 — 卡片类型识别 (8 种) + 读取/写入/模拟 + 数据块解析</li>
+    <li class="done">SubGHz 模块 — 频率扫描/接收/发射/保存/重放 + 协议识别 (7 种) + 频段验证</li>
+    <li class="done">BadUSB 模块 — 脚本验证/执行/列表/保存 + 3 个内置示例脚本</li>
+    <li class="done">GPIO 模块 — 8 引脚布局 + 方向/值设置 + ADC 读取 + 逻辑分析仪采样</li>
+    <li class="done">IR 模块 — 6 协议数据库 + 3 遥控器预设 + 学习/发射/保存</li>
+    <li class="done">Screen 模块 — RGB565 帧获取 + 编解码辅助函数</li>
+    <li class="done">20 个新 Tauri 命令注册 (总计 37)</li>
+    <li class="done">10 个单元测试</li>
+    <li class="todo">真机验证 — 需要硬件连接测试各模块 IPC 命令</li>
+    <li class="todo">SD 卡存储 — list_saved 系列函数目前返回空列表 (Phase 4 实现)</li>
+    <li class="todo">屏幕流式推送 — 真实设备连续帧推送 (Phase 4 实现)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-title">⑪ 修复的编译错误 (4 类)</div>
+  <table>
+    <tr><th>#</th><th>错误</th><th>修复</th></tr>
+    <tr><td>1</td><td><code>SAFE_PATTERNS</code> 类型声明为 2 元组但数据是 3 元组</td><td>改为 <code>&amp;[(&amp;str, &amp;str, &amp;str)]</code></td></tr>
+    <tr><td>2</td><td><code>CARD_DATABASE</code> 类型声明为 4 元组但数据是 5 元组</td><td>改为 <code>&amp;[(&amp;str, &amp;str, &amp;str, u16, u8)]</code></td></tr>
+    <tr><td>3</td><td><code>PIN_LAYOUT</code> const 不能调用 <code>.into()</code> (String 非常量函数)</td><td>改为 <code>fn pin_layout() -> Vec&lt;PinInfo&gt;</code></td></tr>
+    <tr><td>4</td><td><code>IR_PROTOCOLS</code> const 不能调用 <code>.into()</code></td><td>改为 <code>fn ir_protocols() -> Vec&lt;ProtocolInfo&gt;</code></td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑫ 下一步 — Phase 3 预览</div>
+  <ul class="feat-list">
+    <li class="todo">AI 管道 — 接入 DeepSeek/Qwen/OpenAI API (reqwest SSE stream)</li>
+    <li class="todo">AI 命令解析 — 解析 <code>&lt;cmds&gt;</code> 标签，自动调用设备命令</li>
+    <li class="todo">AI 脱敏 — 7 种模式 (UID/NFC Key/WiFi/API Key/手机号/邮箱/坐标)</li>
+    <li class="todo">AI 上下文 — 设备状态注入 (连接状态/当前模块/最近操作)</li>
+    <li class="todo">AI 流式推送 — token-by-token emit 到前端</li>
+  </ul>
+</div>
+
+<div class="footer">
+  Lucy Desktop Phase 2 — Hardware Modules | cargo check ✓ | 2026-07-12
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucy Desktop — Phase 1 概览 | USB Bridge</title>
+<style>
+  @font-face {
+    font-family: 'PixelFont';
+    src: local('Press Start 2P'), local('VT323'), local('Courier New');
+  }
+  :root {
+    --bg: #0A0E14;
+    --bg2: #11151C;
+    --bg3: #1A1F28;
+    --ink: #E6E1CF;
+    --muted: #6B7280;
+    --accent: #F97316;
+    --accent2: #39BAE6;
+    --green: #7FD962;
+    --red: #F26D78;
+    --yellow: #FFB454;
+    --rule: #2D333B;
+    --code-bg: #0D1117;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  /* Header */
+  .header {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+  }
+  .header .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-size: 28px;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+  }
+  .header .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  /* Section */
+  .section {
+    margin-bottom: 2rem;
+  }
+  .section-title {
+    color: var(--accent);
+    font-size: 16px;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .status-item {
+    background: var(--bg2);
+    border: 1px solid var(--rule);
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .status-item .label { color: var(--muted); }
+  .status-item .value { color: var(--green); font-weight: bold; }
+  .status-item .value.warn { color: var(--yellow); }
+  /* Code block */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    margin: 1rem 0;
+    overflow-x: auto;
+  }
+  .code-header {
+    background: var(--bg3);
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .code-header .lang {
+    color: var(--accent2);
+    font-weight: bold;
+  }
+  .code-header .file {
+    color: var(--muted);
+  }
+  pre {
+    padding: 12px 16px;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+  /* Syntax highlighting */
+  .kw { color: var(--red); }
+  .ty { color: var(--accent2); }
+  .fn { color: var(--yellow); }
+  .str { color: var(--green); }
+  .num { color: var(--accent2); }
+  .cmt { color: var(--muted); font-style: italic; }
+  .attr { color: var(--yellow); }
+  .macro { color: var(--accent); }
+  /* Annotation */
+  .annotation {
+    background: var(--bg2);
+    border-left: 2px solid var(--accent2);
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .annotation strong { color: var(--accent2); }
+  .annotation .arrow { color: var(--accent); margin-right: 4px; }
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 12px;
+  }
+  th {
+    background: var(--bg3);
+    color: var(--accent);
+    text-align: left;
+    padding: 6px 10px;
+    border: 1px solid var(--rule);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+  td {
+    padding: 6px 10px;
+    border: 1px solid var(--rule);
+    color: var(--ink);
+  }
+  tr:nth-child(even) td { background: var(--bg2); }
+  /* Inline code */
+  code {
+    background: var(--bg3);
+    color: var(--accent2);
+    padding: 1px 4px;
+    font-size: 12px;
+  }
+  /* List */
+  .feat-list {
+    list-style: none;
+    padding: 0;
+  }
+  .feat-list li {
+    padding: 4px 0;
+    padding-left: 20px;
+    position: relative;
+    font-size: 13px;
+  }
+  .feat-list li::before {
+    content: '▸';
+    color: var(--accent);
+    position: absolute;
+    left: 4px;
+  }
+  .feat-list li.done::before { color: var(--green); content: '✓'; }
+  .feat-list li.todo::before { color: var(--yellow); content: '○'; }
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 2rem;
+    padding-top: 1rem;
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+  }
+  /* Diagram */
+  .diagram {
+    background: var(--bg2);
+    border: 1px solid var(--rule);
+    padding: 16px;
+    margin: 1rem 0;
+    font-family: 'Menlo', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .diagram .accent { color: var(--accent); }
+  .diagram .green { color: var(--green); }
+  .diagram .blue { color: var(--accent2); }
+  .diagram .yellow { color: var(--yellow); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <span class="tag">PHASE 1 COMPLETE</span>
+  <h1>USB Bridge — 设备通信层</h1>
+  <div class="subtitle">Lucy Desktop Rust 后端 | 7 文件新建/重写 | cargo check ✓ 0 error, 5 warning</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item"><span class="label">状态</span> <span class="value">编译通过</span></div>
+  <div class="status-item"><span class="label">命令数</span> <span class="value">17</span></div>
+  <div class="status-item"><span class="label">模块数</span> <span class="value">7</span></div>
+  <div class="status-item"><span class="label">修复缺陷</span> <span class="value">6</span></div>
+  <div class="status-item"><span class="label">已知警告</span> <span class="value warn">5 (dead_code)</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">① 架构总览</div>
+  <div class="diagram"><span class="accent">┌─────────────────────────────────────────────────────────┐</span>
+<span class="accent">│</span>                    <span class="yellow">Lucy Desktop — USB Bridge Stack</span>                    <span class="accent">│</span>
+<span class="accent">│</span>                                                         <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">前端 (React)</span>                                         <span class="accent">│</span>
+<span class="accent">│</span>    │ invoke("device_connect", {port})                    <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                    <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">Tauri Commands (commands.rs)</span>                          <span class="accent">│</span>
+<span class="accent">│</span>    │ get_tm() → Arc&lt;TransportManager&gt;                   <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                    <span class="accent">│</span>
+<span class="accent">│</span>  <span class="green">TransportManager</span>  ──── manages ────▶  <span class="green">DeviceTransport trait</span>  <span class="accent">│</span>
+<span class="accent">│</span>    │ .connect(port)                    │ .send_command()  <span class="accent">│</span>
+<span class="accent">│</span>    │ .auto_connect()                   │ .get_info()      <span class="accent">│</span>
+<span class="accent">│</span>    │ .disconnect()                     │ .nfc_detect()    <span class="accent">│</span>
+<span class="accent">│</span>    │                                  │ .get_screen()    <span class="accent">│</span>
+<span class="accent">│</span>    │            ┌──────────────────────┴──────────────┐  <span class="accent">│</span>
+<span class="accent">│</span>    │            ▼                                     ▼  <span class="accent">│</span>
+<span class="accent">│</span>    │     <span class="yellow">UsbTransport</span>                        <span class="yellow">VirtualDevice</span>  <span class="accent">│</span>
+<span class="accent">│</span>    │     │ serialport CDC                  │ mock data     <span class="accent">│</span>
+<span class="accent">│</span>    │     │ reader thread                   │ 100ms delay   <span class="accent">│</span>
+<span class="accent">│</span>    │     │ pending map (oneshot)           │ RGB565 gen    <span class="accent">│</span>
+<span class="accent">│</span>    │     │ 5s timeout                      │               <span class="accent">│</span>
+<span class="accent">│</span>    │     ▼                                              <span class="accent">│</span>
+<span class="accent">│</span>    │  <span class="blue">protocol.rs</span> (MessagePack + CRC16)                  <span class="accent">│</span>
+<span class="accent">│</span>    │  [0xAA55][ver][len][payload][crc]                   <span class="accent">│</span>
+<span class="accent">│</span>    │     │                                              <span class="accent">│</span>
+<span class="accent">│</span>    │     ▼                                              <span class="accent">│</span>
+<span class="accent">│</span>    │  <span class="blue">ESP32-S3 USB CDC</span>                                    <span class="accent">│</span>
+<span class="accent">└─────────────────────────────────────────────────────────┘</span>
+
+  <span class="cmt">降级策略: 无真实设备 → VirtualDevice → UI 全功能可用</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">② 新建文件清单</div>
+  <table>
+    <tr><th>文件</th><th>行数</th><th>功能</th></tr>
+    <tr><td><code>usb_transport.rs</code></td><td>391</td><td>真实 USB CDC 串口通信 + reader thread + 帧解析</td></tr>
+    <tr><td><code>transport_manager.rs</code></td><td>146</td><td>传输层管理器 — 真实/虚拟设备切换 + 自动降级</td></tr>
+    <tr><td><code>detector.rs</code> (重写)</td><td>112</td><td>serialport 枚举 + VID:PID 过滤 + 后台扫描</td></tr>
+    <tr><td><code>commands.rs</code> (重写)</td><td>401</td><td>17 个 Tauri 命令 — 设备/NFC/SubGHz/GPIO/IR/Screen/AI</td></tr>
+    <tr><td><code>lib.rs</code> (重写)</td><td>142</td><td>入口 — 状态管理 + 自动连接 + 命令注册</td></tr>
+    <tr><td><code>mod.rs</code> (更新)</td><td>7</td><td>模块声明</td></tr>
+    <tr><td><code>Cargo.toml</code> (更新)</td><td>42</td><td>新增 serialport/rmp-serde/crc16/async-trait/base64/log</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">③ 核心代码 — UsbTransport (reader thread 模式)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>设计要点</strong>: reader thread 持续读串口 → 解析帧 → 有 id 字段则匹配 pending oneshot → 有 evt 字段则 emit 前端事件。send_command 用 oneshot channel 实现请求/响应多路复用。</div>
+  <div class="code-block">
+    <div class="code-header"><span class="file">src/device/usb_transport.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 真实 USB 设备传输层 — 核心结构</span>
+<span class="kw">pub struct</span> <span class="ty">UsbTransport</span> {
+    <span class="cmt">// 串口句柄（共享给 reader thread）</span>
+    port: <span class="ty">Arc</span>&lt;<span class="ty">Mutex</span>&lt;<span class="ty">Box</span>&lt;<span class="kw">dyn</span> <span class="ty">serialport::SerialPort</span>&gt;&gt;&gt;,
+    <span class="cmt">// 待响应请求表: transaction_id → oneshot::Sender</span>
+    pending: <span class="ty">Arc</span>&lt;<span class="ty">Mutex</span>&lt;<span class="ty">HashMap</span>&lt;<span class="ty">u16</span>, <span class="ty">oneshot::Sender</span>&lt;<span class="ty">serde_json::Value</span>&gt;&gt;&gt;&gt;,
+    next_id: <span class="ty">AtomicU16</span>,        <span class="cmt">// 事务 ID 自增</span>
+    connected: <span class="ty">AtomicBool</span>,     <span class="cmt">// 连接状态（无锁读）</span>
+    reader_handle: <span class="ty">Mutex</span>&lt;<span class="ty">Option</span>&lt;<span class="ty">JoinHandle</span>&gt;&gt;,
+}
+
+<span class="cmt">// send_command — 请求/响应多路复用</span>
+<span class="kw">async fn</span> <span class="fn">send_command</span>(&amp;<span class="kw">self</span>, module: &amp;<span class="ty">str</span>, op: &amp;<span class="ty">str</span>, data: <span class="ty">serde_json::Value</span>) -&gt; <span class="ty">LucyResult</span>&lt;<span class="ty">serde_json::Value</span>&gt; {
+    <span class="kw">let</span> id = <span class="kw">self</span>.<span class="fn">alloc_id</span>();
+    <span class="kw">let</span> frame = <span class="fn">protocol::encode_request</span>(id, module, op, &amp;data)?;
+
+    <span class="cmt">// 1. 注册 pending 请求</span>
+    <span class="kw">let</span> (tx, rx) = <span class="fn">oneshot::channel</span>();
+    <span class="kw">self</span>.pending.<span class="fn">lock</span>().<span class="fn">insert</span>(id, tx);
+
+    <span class="cmt">// 2. 写入串口</span>
+    <span class="kw">self</span>.port.<span class="fn">lock</span>().<span class="fn">write_all</span>(&amp;frame)?;
+
+    <span class="cmt">// 3. 等待响应（5s 超时）</span>
+    <span class="kw">match</span> <span class="fn">tokio::time::timeout</span>(<span class="ty">Duration</span>::<span class="fn">from_millis</span>(<span class="num">5000</span>), rx).<span class="kw">await</span> {
+        <span class="ty">Ok</span>(<span class="ty">Ok</span>(response)) =&gt; <span class="ty">Ok</span>(response),
+        <span class="ty">Err</span>(_) =&gt; <span class="ty">Err</span>(<span class="ty">LucyError::Usb</span>(<span class="str">"Request timeout"</span>.<span class="fn">into</span>())),
+    }
+}
+
+<span class="cmt">// reader_loop — 后台线程持续读串口并分发</span>
+<span class="kw">fn</span> <span class="fn">reader_loop</span>(port: <span class="ty">Arc</span>&lt;...&gt;, pending: <span class="ty">Arc</span>&lt;...&gt;, app: <span class="ty">AppHandle</span>) {
+    <span class="kw">loop</span> {
+        <span class="kw">let</span> n = port.<span class="fn">lock</span>().<span class="fn">read</span>(&amp;<span class="kw">mut</span> buf)?;  <span class="cmt">// 阻塞读</span>
+        frame_buf.<span class="fn">extend</span>(&amp;buf[..n]);
+
+        <span class="kw">loop</span> {
+            <span class="kw">match</span> <span class="fn">try_parse_frame</span>(&amp;frame_buf[scan_pos..]) {
+                <span class="ty">Complete</span>(data, consumed) =&gt; {
+                    <span class="kw">let</span> value = <span class="fn">protocol::decode_response</span>(&amp;data)?;
+                    <span class="kw">if let</span> <span class="ty">Some</span>(id) = value.<span class="fn">get</span>(<span class="str">"id"</span>) {
+                        <span class="cmt">// 响应帧 → 匹配 pending → oneshot 唤醒</span>
+                        pending.<span class="fn">lock</span>().<span class="fn">remove</span>(&amp;id).<span class="fn">send</span>(value);
+                    } <span class="kw">else if let</span> <span class="ty">Some</span>(evt) = value.<span class="fn">get</span>(<span class="str">"evt"</span>) {
+                        <span class="cmt">// 事件帧 → emit 前端</span>
+                        app.<span class="fn">emit</span>(<span class="str">"screen_frame"</span>, payload);  <span class="cmt">// 屏幕帧</span>
+                        app.<span class="fn">emit</span>(<span class="str">"subghz_signal"</span>, payload); <span class="cmt">// SubGHz 信号</span>
+                        app.<span class="fn">emit</span>(<span class="str">"nfc_detected"</span>, payload);  <span class="cmt">// NFC 检测</span>
+                    }
+                }
+                <span class="ty">Partial</span> =&gt; <span class="kw">break</span>,  <span class="cmt">// 需要更多数据</span>
+                <span class="ty">Invalid</span>(pos) =&gt; scan_pos += pos,  <span class="cmt">// 跳过垃圾字节</span>
+            }
+        }
+    }
+}</pre>
+  </div>
+  <div class="annotation"><span class="arrow">→</span> <strong>关键决策</strong>: 使用 <code>std::thread</code> 而非 tokio task 读串口，因为 <code>serialport::SerialPort::read</code> 是阻塞 API。通过 oneshot channel 与 tokio 异步世界桥接。</div>
+</div>
+
+<div class="section">
+  <div class="section-title">④ 核心代码 — TransportManager (自动降级)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>设计要点</strong>: 统一管理真实/虚拟设备切换。auto_connect 先扫描 VID=0x303A PID=0x4001，找不到则降级为 VirtualDevice 并 emit <code>device_fallback</code> 事件。</div>
+  <div class="code-block">
+    <div class="code-header"><span class="file">src/device/transport_manager.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 传输层管理器 — 存储在 Tauri managed state 中（Arc 包装）</span>
+<span class="kw">pub struct</span> <span class="ty">TransportManager</span> {
+    transport: <span class="ty">RwLock</span>&lt;<span class="ty">Option</span>&lt;<span class="ty">Arc</span>&lt;<span class="kw">dyn</span> <span class="ty">DeviceTransport</span>&gt;&gt;&gt;,
+    current_port: <span class="ty">RwLock</span>&lt;<span class="ty">String</span>&gt;,
+    is_virtual: <span class="ty">RwLock</span>&lt;<span class="ty">bool</span>&gt;,
+}
+
+<span class="cmt">// 自动连接 — 优先真实设备，降级虚拟设备</span>
+<span class="kw">pub async fn</span> <span class="fn">auto_connect</span>(&amp;<span class="kw">self</span>, app: &amp;<span class="ty">AppHandle</span>) -&gt; <span class="ty">LucyResult</span>&lt;<span class="ty">bool</span>&gt; {
+    <span class="kw">match</span> <span class="fn">detector::scan_devices</span>().<span class="kw">await</span> {
+        <span class="ty">Ok</span>(devices) =&gt; {
+            <span class="cmt">// 查找 Lucy 设备 (VID=0x303A, PID=0x4001)</span>
+            <span class="kw">if let</span> <span class="ty">Some</span>(dev) = devices.<span class="fn">iter</span>().<span class="fn">find</span>(|d| d.vid == <span class="ty">LUCY_VID</span> &amp;&amp; d.pid == <span class="ty">LUCY_PID</span>) {
+                <span class="kw">self</span>.<span class="fn">connect</span>(&amp;dev.port, app).<span class="kw">await</span>?;
+                <span class="kw">return</span> <span class="ty">Ok</span>(<span class="kw">true</span>);  <span class="cmt">// 真实设备</span>
+            }
+            <span class="cmt">// 降级 → VirtualDevice</span>
+            <span class="kw">self</span>.<span class="fn">connect</span>(<span class="str">"VIRTUAL"</span>, app).<span class="kw">await</span>?;
+            <span class="kw">let</span> _ = app.<span class="fn">emit</span>(<span class="str">"device_fallback"</span>, <span class="macro">json!</span>({<span class="str">"reason"</span>: <span class="str">"No Lucy device"</span>}));
+            <span class="ty">Ok</span>(<span class="kw">false</span>)  <span class="cmt">// 虚拟设备</span>
+        }
+        <span class="ty">Err</span>(e) =&gt; { <span class="cmt">// 扫描失败也降级</span>
+            <span class="kw">self</span>.<span class="fn">connect</span>(<span class="str">"VIRTUAL"</span>, app).<span class="kw">await</span>?;
+            <span class="ty">Ok</span>(<span class="kw">false</span>)
+        }
+    }
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑤ 核心代码 — 帧协议 (MessagePack + CRC16)</div>
+  <div class="code-block">
+    <div class="code-header"><span class="file">src/device/protocol.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 帧格式: [magic(0xAA55)] [ver(u8)] [len(u16)] [payload(msgpack)] [crc16(u16)]</span>
+<span class="kw">pub const</span> <span class="constant">MAGIC</span>: [<span class="ty">u8</span>; <span class="num">2</span>] = [<span class="num">0xAA</span>, <span class="num">0x55</span>];
+<span class="kw">pub const</span> <span class="constant">MAX_FRAME_SIZE</span>: <span class="ty">usize</span> = <span class="num">128</span> * <span class="num">1024</span>; <span class="cmt">// 128KB</span>
+
+<span class="kw">pub fn</span> <span class="fn">encode_request</span>(id: <span class="ty">u16</span>, module: &amp;<span class="ty">str</span>, op: &amp;<span class="ty">str</span>, data: &amp;<span class="ty">Value</span>) -&gt; <span class="ty">LucyResult</span>&lt;<span class="ty">Vec</span>&lt;<span class="ty">u8</span>&gt;&gt; {
+    <span class="kw">let</span> payload = <span class="macro">json!</span>({<span class="str">"id"</span>: id, <span class="str">"mod"</span>: module, <span class="str">"op"</span>: op, <span class="str">"data"</span>: data});
+    <span class="kw">let</span> bytes = <span class="fn">rmp_serde::to_vec_named</span>(&amp;payload)?;  <span class="cmt">// MessagePack 编码</span>
+    <span class="kw">let</span> crc = <span class="fn">crc16::State::&lt;crc16::ARC&gt;::calculate</span>(&amp;bytes);
+
+    <span class="kw">let mut</span> frame = <span class="ty">Vec</span>::<span class="fn">with_capacity</span>(<span class="num">7</span> + bytes.<span class="fn">len</span>());
+    frame.<span class="fn">extend</span>(&amp;<span class="constant">MAGIC</span>);                    <span class="cmt">// 0xAA55</span>
+    frame.<span class="fn">push</span>(<span class="constant">PROTOCOL_VERSION</span>);       <span class="cmt">// 0x01</span>
+    frame.<span class="fn">extend</span>(&amp;(bytes.<span class="fn">len</span>() <span class="kw">as</span> <span class="ty">u16</span>).<span class="fn">to_le_bytes</span>());  <span class="cmt">// payload length</span>
+    frame.<span class="fn">extend</span>(&amp;bytes);                    <span class="cmt">// MessagePack payload</span>
+    frame.<span class="fn">extend</span>(&amp;crc.<span class="fn">to_le_bytes</span>());        <span class="cmt">// CRC16</span>
+    <span class="ty">Ok</span>(frame)
+}</pre>
+  </div>
+  <div class="annotation"><span class="arrow">→</span> <strong>为什么 MessagePack</strong>: 比 JSON 小 30-50%，二进制安全，ESP32-S3 端有成熟的 msgpack-c 库。CRC16-ARC 检测传输错误，magic bytes 实现帧同步。</div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑥ 核心代码 — lib.rs 启动流程</div>
+  <div class="code-block">
+    <div class="code-header"><span class="file">src/lib.rs</span><span class="lang">Rust</span></div>
+<pre><span class="kw">pub fn</span> <span class="fn">run</span>() {
+    <span class="kw">let</span> shared_state: <span class="ty">SharedState</span> = <span class="ty">Arc::new</span>(<span class="ty">RwLock::new</span>(<span class="ty">AppState::new</span>()));
+    <span class="kw">let</span> transport_manager = <span class="ty">Arc::new</span>(<span class="ty">TransportManager::new</span>());  <span class="cmt">// Arc 包装</span>
+
+    <span class="macro">tauri::Builder::default</span>()
+        .<span class="fn">manage</span>(shared_state)
+        .<span class="fn">manage</span>(transport_manager)
+        .<span class="fn">setup</span>(|app| {
+            <span class="cmt">// 后台任务 1: 设备自动扫描（每 3s）</span>
+            <span class="macro">tauri::async_runtime::spawn</span>(<span class="kw">async</span> {
+                <span class="fn">detector::start_auto_scan</span>(handle).<span class="kw">await</span>;
+            });
+
+            <span class="cmt">// 后台任务 2: 自动连接（延迟 2s 等前端加载）</span>
+            <span class="macro">tauri::async_runtime::spawn</span>(<span class="kw">async</span> {
+                <span class="fn">sleep</span>(<span class="ty">Duration::from_secs</span>(<span class="num">2</span>)).<span class="kw">await</span>;
+                <span class="kw">let</span> tm = handle.<span class="fn">state::&lt;Arc&lt;TransportManager&gt;&gt;</span>().<span class="fn">inner</span>().<span class="fn">clone</span>();
+                <span class="kw">match</span> tm.<span class="fn">auto_connect</span>(&amp;handle).<span class="kw">await</span> {
+                    <span class="ty">Ok</span>(real) =&gt; {
+                        <span class="cmt">// 更新 SSOT 状态 → emit 前端</span>
+                        state.<span class="fn">write</span>().connection_state = <span class="ty">Connected</span>;
+                        <span class="fn">emit_state_update</span>(&amp;handle, &amp;state);
+                        <span class="cmt">// 虚拟设备 → 启动屏幕帧推送</span>
+                        <span class="kw">if</span> !real { <span class="fn">start_virtual_screen_stream_public</span>(handle).<span class="kw">await</span>; }
+                    }
+                    <span class="ty">Err</span>(e) =&gt; { state.<span class="fn">write</span>().connection_state = <span class="ty">Error</span>; }
+                }
+            });
+            <span class="ty">Ok</span>(())
+        })
+        .<span class="fn">invoke_handler</span>(<span class="macro">generate_handler!</span>[
+            <span class="fn">device_scan</span>, <span class="fn">device_connect</span>, <span class="fn">device_disconnect</span>,
+            <span class="fn">device_get_info</span>, <span class="fn">device_refresh_info</span>,
+            <span class="fn">nfc_detect</span>, <span class="fn">nfc_read_uid</span>,
+            <span class="fn">subghz_scan</span>, <span class="fn">subghz_rx</span>,
+            <span class="fn">gpio_set_direction</span>, <span class="fn">gpio_set_value</span>, <span class="fn">gpio_read</span>,
+            <span class="fn">ir_learn</span>, <span class="fn">ir_transmit</span>,
+            <span class="fn">screen_get_frame</span>, <span class="fn">ai_send_message</span>,
+            <span class="fn">get_app_state</span>, <span class="fn">close_window</span>, <span class="fn">minimize_window</span>,
+        ])
+        .<span class="fn">run</span>(<span class="macro">generate_context!</span>())
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑦ 修复的 6 个缺陷</div>
+  <table>
+    <tr><th>#</th><th>缺陷</th><th>修复方案</th></tr>
+    <tr><td>1</td><td>TransportManager 未实现 Clone，<code>get_tm()</code> 调用 <code>.clone()</code> 失败</td><td>改用 <code>Arc&lt;TransportManager&gt;</code> 作为 managed state，<code>Arc::clone</code> 共享同一实例</td></tr>
+    <tr><td>2</td><td><code>start_virtual_screen_stream</code> 为私有且名称与 lib.rs 调用不匹配</td><td>重命名为 <code>pub async fn start_virtual_screen_stream_public</code></td></tr>
+    <tr><td>3</td><td><code>usb_info.serial</code> 字段不存在（serialport 4.x 改名）</td><td>改为 <code>usb_info.serial_number</code></td></tr>
+    <tr><td>4</td><td><code>state.read().snapshot()</code> 临时值生命周期不足</td><td>拆分为 <code>let snapshot = state.read().snapshot(); Ok(snapshot)</code></td></tr>
+    <tr><td>5</td><td><code>tauri.conf.json</code> 的 <code>app.title</code> 字段在 Tauri 2 中不存在</td><td>删除该字段（title 已在 windows 数组中）</td></tr>
+    <tr><td>6</td><td><code>protocol-asset</code> feature 需要安全配置，Phase 1 不需要</td><td>从 <code>Cargo.toml</code> 移除该 feature</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑧ Phase 1 功能完成度</div>
+  <ul class="feat-list">
+    <li class="done">USB CDC 串口通信 — serialport 4.x + reader thread + 帧解析</li>
+    <li class="done">MessagePack 帧编解码 — magic/ver/len/payload/crc16</li>
+    <li class="done">请求/响应多路复用 — oneshot channel + 5s 超时 + pending map</li>
+    <li class="done">异步事件分发 — screen_frame/subghz_signal/nfc_detected/state_change</li>
+    <li class="done">设备检测 — serialport 枚举 + VID:PID 过滤 + 3s 后台扫描</li>
+    <li class="done">TransportManager — 真实/虚拟设备切换 + 自动降级</li>
+    <li class="done">VirtualDevice — mock NFC/SubGHz/screen 数据，UI 全功能可用</li>
+    <li class="done">17 个 Tauri 命令 — 覆盖所有模块的基础操作</li>
+    <li class="done">SSOT 状态管理 — AppState → emit → Zustand stores</li>
+    <li class="done">自动连接 — 启动 2s 后自动扫描并连接</li>
+    <li class="todo">真机验证 — 需要硬件连接测试</li>
+    <li class="todo">断线重连 — reader thread 退出后的自动重连机制</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-title">⑨ 已知警告 (5)</div>
+  <table>
+    <tr><th>文件</th><th>函数</th><th>说明</th></tr>
+    <tr><td><code>ui_bridge.rs</code></td><td><code>emit_screen_frame</code></td><td>Phase 2 屏幕帧推送将使用</td></tr>
+    <tr><td><code>ui_bridge.rs</code></td><td><code>emit_ai_token</code></td><td>Phase 3 AI 流式响应将使用</td></tr>
+    <tr><td><code>ui_bridge.rs</code></td><td><code>emit_subghz_signal</code></td><td>Phase 2 SubGHz 扫描将使用</td></tr>
+    <tr><td><code>transport_manager.rs</code></td><td><code>current_port()</code></td><td>调试/状态栏显示将使用</td></tr>
+    <tr><td><code>protocol.rs</code></td><td><code>parse_event()</code></td><td>reader_loop 内联调用，保留为独立函数供测试</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑩ 下一步 — Phase 2 预览</div>
+  <ul class="feat-list">
+    <li class="todo">NFC 模块 — 卡片读取/写入/模拟（ST25R3916 命令集）</li>
+    <li class="todo">SubGHz 模块 — 频率扫描/信号捕获/重放（CC1101 寄存器配置）</li>
+    <li class="todo">BadUSB 模块 — 脚本编辑器 + badusb_guard 审查</li>
+    <li class="todo">GPIO 模块 — 引脚控制 + 逻辑分析仪波形</li>
+    <li class="todo">IR 模块 — 红外学习/发射/协议库</li>
+    <li class="todo">屏幕镜像 — 实时 RGB565 帧推送 + CRT 滤镜</li>
+  </ul>
+</div>
+
+<div class="footer">
+  Lucy Desktop Phase 1 — USB Bridge | cargo check ✓ | 2026-07-12
+</div>
+
+</div>
+</body>
+</html>

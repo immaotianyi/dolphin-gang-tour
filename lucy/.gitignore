@@ -1,0 +1,55 @@
+# Lucy Project .gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# KiCad
+*.bak
+*.bck
+*.sch-bak
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.kicad_pro-bak
+*.pyc
+_autosave-*
+*-save.kicad_pcb
+*-save.kicad_sch
+fp-info-cache
+fp-lib-table
+sym-lib-table
+*-table.bak
+
+# ESP-IDF / Firmware
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/managed_components/
+
+# Tauri / Node.js
+desktop/node_modules/
+desktop/src-tauri/target/
+desktop/dist/
+desktop/.env
+desktop/.env.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Chrome profiles (workspace artifacts)
+.chrome-profile*
+
+# Temporary files
+*.tmp
+*.log

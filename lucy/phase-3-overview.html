@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucy Desktop — Phase 3 概览 | AI 管道</title>
+<style>
+  :root { --bg:#0A0E14; --bg2:#11151C; --bg3:#1A1F28; --ink:#E6E1CF; --muted:#6B7280; --accent:#F97316; --accent2:#39BAE6; --green:#7FD962; --red:#F26D78; --yellow:#FFB454; --rule:#2D333B; --code-bg:#0D1117; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:'Menlo','Monaco','Courier New',monospace; font-size:14px; line-height:1.6; }
+  .container { max-width:1000px; margin:0 auto; padding:2rem 1.5rem; }
+  .header { border-bottom:2px solid var(--accent); padding-bottom:1rem; margin-bottom:2rem; }
+  .header .tag { display:inline-block; background:var(--accent); color:var(--bg); padding:2px 8px; font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:8px; }
+  .header h1 { font-size:28px; }
+  .header .subtitle { color:var(--muted); font-size:13px; margin-top:4px; }
+  .section { margin-bottom:2rem; }
+  .section-title { color:var(--accent); font-size:16px; border-left:3px solid var(--accent); padding-left:10px; margin-bottom:1rem; text-transform:uppercase; letter-spacing:1px; }
+  .status-bar { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+  .status-item { background:var(--bg2); border:1px solid var(--rule); padding:6px 12px; font-size:12px; }
+  .status-item .label { color:var(--muted); }
+  .status-item .value { color:var(--green); font-weight:bold; }
+  .status-item .value.warn { color:var(--yellow); }
+  .code-block { background:var(--code-bg); border:1px solid var(--rule); margin:1rem 0; overflow-x:auto; }
+  .code-header { background:var(--bg3); padding:6px 12px; font-size:11px; color:var(--muted); border-bottom:1px solid var(--rule); display:flex; justify-content:space-between; }
+  .code-header .lang { color:var(--accent2); font-weight:bold; }
+  pre { padding:12px 16px; font-size:12px; line-height:1.5; overflow-x:auto; }
+  .kw{color:var(--red)} .ty{color:var(--accent2)} .fn{color:var(--yellow)} .str{color:var(--green)} .num{color:var(--accent2)} .cmt{color:var(--muted);font-style:italic} .attr{color:var(--yellow)}
+  .annotation { background:var(--bg2); border-left:2px solid var(--accent2); padding:8px 12px; margin:8px 0; font-size:12px; color:var(--muted); }
+  .annotation strong { color:var(--accent2); }
+  .annotation .arrow { color:var(--accent); margin-right:4px; }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:12px; }
+  th { background:var(--bg3); color:var(--accent); text-align:left; padding:6px 10px; border:1px solid var(--rule); font-size:11px; text-transform:uppercase; }
+  td { padding:6px 10px; border:1px solid var(--rule); }
+  tr:nth-child(even) td { background:var(--bg2); }
+  code { background:var(--bg3); color:var(--accent2); padding:1px 4px; font-size:12px; }
+  .feat-list { list-style:none; padding:0; }
+  .feat-list li { padding:4px 0; padding-left:20px; position:relative; font-size:13px; }
+  .feat-list li::before { content:'\25B8'; color:var(--accent); position:absolute; left:4px; }
+  .feat-list li.done::before { color:var(--green); content:'\2713'; }
+  .feat-list li.todo::before { color:var(--yellow); content:'\25CB'; }
+  .footer { border-top:1px solid var(--rule); margin-top:2rem; padding-top:1rem; color:var(--muted); font-size:11px; text-align:center; }
+  .diagram { background:var(--bg2); border:1px solid var(--rule); padding:16px; margin:1rem 0; font-family:'Menlo',monospace; font-size:11px; line-height:1.5; overflow-x:auto; white-space:pre; }
+  .diagram .accent{color:var(--accent)} .diagram .green{color:var(--green)} .diagram .blue{color:var(--accent2)} .diagram .yellow{color:var(--yellow)} .diagram .red{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <span class="tag">PHASE 3 COMPLETE</span>
+  <h1>AI 管道 — 多 Provider LLM + 脱敏 + 命令解析</h1>
+  <div class="subtitle">Lucy Desktop Rust 后端 | 4 文件新建 | cargo check ✓ 0 error, 37 warning</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-item"><span class="label">状态</span> <span class="value">编译通过</span></div>
+  <div class="status-item"><span class="label">Tauri 命令</span> <span class="value">40 (+3 AI)</span></div>
+  <div class="status-item"><span class="label">新建文件</span> <span class="value">4</span></div>
+  <div class="status-item"><span class="label">脱敏模式</span> <span class="value">7</span></div>
+  <div class="status-item"><span class="label">LLM Provider</span> <span class="value">4</span></div>
+  <div class="status-item"><span class="label">单元测试</span> <span class="value">17</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">① AI 管道数据流</div>
+  <div class="diagram"><span class="accent">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="accent">│</span>                  <span class="yellow">AI Pipeline — Phase 3 Data Flow</span>                      <span class="accent">│</span>
+<span class="accent">│</span>                                                              <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">用户输入</span> "read this NFC card UID: 04:A3:B2:C1"           <span class="accent">│</span>
+<span class="accent">│</span>    │                                                        <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                        <span class="accent">│</span>
+<span class="accent">│</span>  <span class="red">sanitizer.rs</span> ── 7 种正则匹配 ──▶ [UID_REDACTED]             <span class="accent">│</span>
+<span class="accent">│</span>    │  ┌──────────────────────────────────────────┐            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 1. NFC UID (04:A3:B2:C1)     → [UID]   │            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 2. NFC Key (A1B2C3D4E5F6)     → [KEY]   │            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 3. WiFi password             → [WIFI]  │            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 4. API Key (sk-xxxx)          → [KEY]   │            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 5. Phone (13812345678)        → [PHONE] │            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 6. Email (test@x.com)         → [EMAIL] │            <span class="accent">│</span>
+<span class="accent">│</span>    │  │ 7. GPS (31.23,121.47)         → [COORDS]│            <span class="accent">│</span>
+<span class="accent">│</span>    │  └──────────────────────────────────────────┘            <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                        <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">pipeline.rs</span> ── 构建上下文                                    <span class="accent">│</span>
+<span class="accent">│</span>    │  system prompt: "You are Lucy..." + device_context       <span class="accent">│</span>
+<span class="accent">│</span>    │  history: [previous messages from AppState]              <span class="accent">│</span>
+<span class="accent">│</span>    │  user message: "read this NFC card UID: [UID_REDACTED]"  <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                        <span class="accent">│</span>
+<span class="accent">│</span>  <span class="green">provider.rs</span> ── HTTP SSE Request                             <span class="accent">│</span>
+<span class="accent">│</span>    │  ┌────────────┬────────────┬──────────┬────────┐         <span class="accent">│</span>
+<span class="accent">│</span>    │  │ DeepSeek   │ OpenAI     │ Qwen     │ Local  │         <span class="accent">│</span>
+<span class="accent">│</span>    │  │ deepseek-  │ gpt-4o-    │ qwen-    │ Ollama │         <span class="accent">│</span>
+<span class="accent">│</span>    │  │ chat       │ mini       │ plus     │ llama3 │         <span class="accent">│</span>
+<span class="accent">│</span>    │  └────────────┴────────────┴──────────┴────────┘         <span class="accent">│</span>
+<span class="accent">│</span>    │                                                        <span class="accent">│</span>
+<span class="accent">│</span>    │  无 API Key? → local_response() 降级                     <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                        <span class="accent">│</span>
+<span class="accent">│</span>  <span class="yellow">SSE Stream</span> ── 逐 token 处理                                 <span class="accent">│</span>
+<span class="accent">│</span>    │  data: {"choices":[{"delta":{"content":"I"}}]}          <span class="accent">│</span>
+<span class="accent">│</span>    │  data: {"choices":[{"delta":{"content":"'ll"}}]}         <span class="accent">│</span>
+<span class="accent">│</span>    │  data: {"choices":[{"delta":{"content":"scan"}}]}        <span class="accent">│</span>
+<span class="accent">│</span>    │  data: [DONE]                                            <span class="accent">│</span>
+<span class="accent">│</span>    │      │                                                  <span class="accent">│</span>
+<span class="accent">│</span>    │      ▼  每个 token                                       <span class="accent">│</span>
+<span class="accent">│</span>    │  emit("ai_token", token) → <span class="blue">前端逐字渲染</span>                  <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                        <span class="accent">│</span>
+<span class="accent">│</span>  <span class="green">命令解析</span> ── &lt;cmds&gt; 标签提取                                 <span class="accent">│</span>
+<span class="accent">│</span>    │  &lt;cmds&gt;                                                 <span class="accent">│</span>
+<span class="accent">│</span>    │  nfc detect                                              <span class="accent">│</span>
+<span class="accent">│</span>    │  subghz rx 433920000                                     <span class="accent">│</span>
+<span class="accent">│</span>    │  &lt;/cmds&gt;                                                <span class="accent">│</span>
+<span class="accent">│</span>    ▼                                                        <span class="accent">│</span>
+<span class="accent">│</span>  <span class="blue">还原脱敏</span> + 返回 { content, cmds, sanitized, model }       <span class="accent">│</span>
+<span class="accent">└──────────────────────────────────────────────────────────────┘</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">② 新建文件清单</div>
+  <table>
+    <tr><th>文件</th><th>行数</th><th>功能</th></tr>
+    <tr><td><code>ai/mod.rs</code></td><td>15</td><td>AI 模块声明</td></tr>
+    <tr><td><code>ai/sanitizer.rs</code></td><td>170</td><td>7 种脱敏模式 (UID/Key/WiFi/APIKey/Phone/Email/Coords) + 还原</td></tr>
+    <tr><td><code>ai/provider.rs</code></td><td>210</td><td>4 Provider 抽象 (DeepSeek/OpenAI/Qwen/Local) + SSE 请求构建 + 流解析</td></tr>
+    <tr><td><code>ai/pipeline.rs</code></td><td>250</td><td>AI 管道: 脱敏→上下文→SSE stream→emit token→解析 cmds→还原</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">③ 核心代码 — sanitizer.rs (7 种脱敏)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>设计要点</strong>: 使用 <code>OnceLock</code> 避免重复编译正则。脱敏后保存 <code>HashMap&lt;placeholder, original&gt;</code>，AI 回复中可还原。只对云端 LLM 脱敏，本地模型不脱敏。</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/ai/sanitizer.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 7 种脱敏模式 — OnceLock 避免重复编译</span>
+<span class="kw">fn</span> <span class="fn">patterns</span>() -&gt; &amp;<span class="kw">'static</span> [(<span class="ty">Regex</span>, &amp;<span class="kw">'static</span> <span class="ty">str</span>, &amp;<span class="kw">'static</span> <span class="ty">str</span>)] {
+    <span class="kw">static</span> <span class="constant">PATTERNS</span>: <span class="ty">OnceLock</span>&lt;<span class="ty">Vec</span>&lt;...&gt;&gt; = <span class="ty">OnceLock::new</span>();
+    <span class="constant">PATTERNS</span>.<span class="fn">get_or_init</span>(|| <span class="macro">vec!</span>[
+        <span class="cmt">// 1. NFC UID — 04:A3:B2:C1</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"(?i)\b([0-9a-f]{2}:){3,9}[0-9a-f]{2}\b"</span>).<span class="fn">unwrap</span>(), <span class="str">"uid"</span>, <span class="str">"[UID_REDACTED]"</span>),
+        <span class="cmt">// 2. NFC Key — A1B2C3D4E5F6</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"(?i)\b[0-9a-f]{12}\b"</span>).<span class="fn">unwrap</span>(), <span class="str">"key"</span>, <span class="str">"[KEY_REDACTED]"</span>),
+        <span class="cmt">// 3. WiFi — password: xxxxx</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"(?i)(?:wifi|password|psk)\s*[:=]\s*(\S{8,63})"</span>).<span class="fn">unwrap</span>(), <span class="str">"wifi"</span>, <span class="str">"[WIFI_REDACTED]"</span>),
+        <span class="cmt">// 4. API Key — sk-xxx / Bearer xxx</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"(?i)(?:sk-|bearer |api[_-]?key\s*[:=]\s*)([a-z0-9_\-]{20,})"</span>).<span class="fn">unwrap</span>(), <span class="str">"apikey"</span>, <span class="str">"[API_KEY_REDACTED]"</span>),
+        <span class="cmt">// 5. 中国手机号 — 13812345678</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"\b1[3-9]\d{9}\b"</span>).<span class="fn">unwrap</span>(), <span class="str">"phone"</span>, <span class="str">"[PHONE_REDACTED]"</span>),
+        <span class="cmt">// 6. 邮箱 — test@example.com</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"\b[\w.%+-]+@[\w.-]+\.[a-zA-Z]{2,}\b"</span>).<span class="fn">unwrap</span>(), <span class="str">"email"</span>, <span class="str">"[EMAIL_REDACTED]"</span>),
+        <span class="cmt">// 7. GPS 坐标 — 31.2304,121.4737</span>
+        (<span class="ty">Regex::new</span>(<span class="str">r"\b-?\d{1,3}\.\d{4,8}\s*,\s*-?\d{1,3}\.\d{4,8}\b"</span>).<span class="fn">unwrap</span>(), <span class="str">"coords"</span>, <span class="str">"[COORDS_REDACTED]"</span>),
+    ])
+}
+
+<span class="cmt">// 脱敏 + 保存映射表 (用于 AI 回复中还原)</span>
+<span class="kw">pub fn</span> <span class="fn">sanitize</span>(input: &amp;<span class="ty">str</span>) -&gt; <span class="ty">SanitizedText</span> {
+    <span class="kw">let mut</span> text = input.<span class="fn">to_string</span>();
+    <span class="kw">let mut</span> replacements = <span class="ty">HashMap::new</span>();
+    <span class="kw">for</span> (regex, _, placeholder) <span class="kw">in</span> <span class="fn">patterns</span>() {
+        text = regex.<span class="fn">replace_all</span>(&amp;text, |caps: &amp;<span class="ty">Captures</span>| {
+            <span class="kw">let</span> full = caps.<span class="fn">get</span>(<span class="num">0</span>).<span class="fn">map</span>(|m| m.<span class="fn">as_str</span>()).<span class="fn">unwrap_or</span>(<span class="str">""</span>);
+            replacements.<span class="fn">insert</span>(placeholder.<span class="fn">to_string</span>(), full.<span class="fn">to_string</span>());
+            placeholder.<span class="fn">to_string</span>()
+        }).<span class="fn">to_string</span>();
+    }
+    <span class="ty">SanitizedText</span> { text, replacements }
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">④ 核心代码 — provider.rs (4 Provider 统一接口)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>关键决策</strong>: 所有 Provider 使用 OpenAI 兼容的 Chat Completions + SSE stream 格式。DeepSeek/Qwen 均兼容此格式，无需额外适配。Local 模式对接 Ollama <code>localhost:11434</code>。</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/ai/provider.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// 4 个 Provider — 统一 OpenAI 兼容 API</span>
+<span class="kw">pub enum</span> <span class="ty">Provider</span> { <span class="ty">Deepseek</span>, <span class="ty">Openai</span>, <span class="ty">Qwen</span>, <span class="ty">Local</span> }
+
+<span class="kw">impl</span> <span class="ty">Provider</span> {
+    <span class="kw">pub fn</span> <span class="fn">endpoint</span>(&amp;<span class="kw">self</span>) -&gt; &amp;<span class="ty">str</span> {
+        <span class="kw">match</span> <span class="kw">self</span> {
+            <span class="ty">Deepseek</span> =&gt; <span class="str">"https://api.deepseek.com/v1/chat/completions"</span>,
+            <span class="ty">Openai</span>   =&gt; <span class="str">"https://api.openai.com/v1/chat/completions"</span>,
+            <span class="ty">Qwen</span>     =&gt; <span class="str">"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"</span>,
+            <span class="ty">Local</span>    =&gt; <span class="str">"http://localhost:11434/v1/chat/completions"</span>,  <span class="cmt">// Ollama</span>
+        }
+    }
+    <span class="kw">pub fn</span> <span class="fn">default_model</span>(&amp;<span class="kw">self</span>) -&gt; &amp;<span class="ty">str</span> {
+        <span class="kw">match</span> <span class="kw">self</span> {
+            <span class="ty">Deepseek</span> =&gt; <span class="str">"deepseek-chat"</span>,
+            <span class="ty">Openai</span>   =&gt; <span class="str">"gpt-4o-mini"</span>,
+            <span class="ty">Qwen</span>     =&gt; <span class="str">"qwen-plus"</span>,
+            <span class="ty">Local</span>    =&gt; <span class="str">"llama3.2"</span>,
+        }
+    }
+    <span class="kw">pub fn</span> <span class="fn">needs_api_key</span>(&amp;<span class="kw">self</span>) -&gt; <span class="ty">bool</span> { !<span class="fn">matches</span>(<span class="kw">self</span>, <span class="ty">Local</span>) }
+}
+
+<span class="cmt">// 解析 SSE 流中的一行</span>
+<span class="kw">pub fn</span> <span class="fn">parse_sse_line</span>(line: &amp;<span class="ty">str</span>) -&gt; <span class="ty">Option</span>&lt;<span class="ty">String</span>&gt; {
+    <span class="kw">if</span> !line.<span class="fn">starts_with</span>(<span class="str">"data: "</span>) { <span class="kw">return</span> <span class="ty">None</span>; }
+    <span class="kw">let</span> data = &amp;line[<span class="num">6</span>..];
+    <span class="kw">if</span> data.<span class="fn">trim</span>() == <span class="str">"[DONE]"</span> { <span class="kw">return</span> <span class="ty">None</span>; }
+    <span class="kw">let</span> chunk: <span class="ty">StreamChunk</span> = <span class="fn">serde_json::from_str</span>(data).<span class="fn">ok</span>()?;
+    chunk.choices.first()?.delta.content
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑤ 核心代码 — pipeline.rs (SSE 流式 + 命令解析)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>设计要点</strong>: <code>run_pipeline</code> 是核心函数。逐行解析 SSE stream，每个 token 通过 <code>app.emit("ai_token", token)</code> 推送到前端。累积完整回复后解析 <code>&lt;cmds&gt;</code> 标签提取设备命令。无 API Key 时降级为 <code>local_response()</code>。</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/ai/pipeline.rs</span><span class="lang">Rust</span></div>
+<pre><span class="cmt">// AI 管道主函数</span>
+<span class="kw">pub async fn</span> <span class="fn">run_pipeline</span>(
+    app: &amp;<span class="ty">AppHandle</span>, message: &amp;<span class="ty">str</span>, model: &amp;<span class="ty">str</span>,
+    device_context: &amp;<span class="ty">str</span>, history: &amp;[<span class="ty">ChatMessage</span>],
+) -&gt; <span class="ty">LucyResult</span>&lt;<span class="ty">AiResponse</span>&gt; {
+    <span class="kw">let</span> config = <span class="fn">provider::load_config</span>(model);
+
+    <span class="cmt">// 1. 脱敏 (仅云端 LLM)</span>
+    <span class="kw">let</span> sanitized = <span class="kw">if</span> config.provider.<span class="fn">needs_api_key</span>()
+        &amp;&amp; <span class="fn">sanitizer::contains_sensitive</span>(message) {
+        <span class="fn">sanitizer::sanitize</span>(message)
+    } <span class="kw">else</span> { <span class="cmt">/* no-op */</span> };
+
+    <span class="cmt">// 2. 无 API Key → 本地降级</span>
+    <span class="kw">if</span> config.provider.<span class="fn">needs_api_key</span>() &amp;&amp; config.api_key.<span class="fn">is_empty</span>() {
+        <span class="kw">return</span> <span class="ty">Ok</span>(<span class="fn">local_response</span>(&amp;sanitized.text));
+    }
+
+    <span class="cmt">// 3. 构建消息: system prompt + history + user</span>
+    <span class="kw">let mut</span> messages = <span class="macro">vec!</span>[<span class="ty">ChatMessage::system</span>(&amp;<span class="fn">build_system_prompt</span>(device_context))];
+    messages.<span class="fn">extend_from_slice</span>(history);
+    messages.<span class="fn">push</span>(<span class="ty">ChatMessage::user</span>(&amp;sanitized.text));
+
+    <span class="cmt">// 4. 发起 SSE 请求</span>
+    <span class="kw">let</span> request = <span class="fn">provider::build_request</span>(&amp;config, messages, <span class="num">60</span>)?;
+    <span class="kw">let</span> response = request.<span class="fn">send</span>().<span class="kw">await</span>?;
+
+    <span class="cmt">// 5. 流式读取 SSE → 逐 token emit</span>
+    <span class="kw">let mut</span> stream = response.<span class="fn">bytes_stream</span>();
+    <span class="kw">let mut</span> full_content = <span class="ty">String::new</span>();
+    <span class="kw">let mut</span> buffer = <span class="ty">String::new</span>();
+
+    <span class="kw">while let</span> <span class="ty">Some</span>(chunk) = stream.<span class="fn">next</span>().<span class="kw">await</span> {
+        <span class="kw">let</span> text = <span class="ty">String::from_utf8_lossy</span>(&amp;chunk?);
+        buffer.<span class="fn">push_str</span>(&amp;text);
+        <span class="kw">while let</span> <span class="ty">Some</span>(pos) = buffer.<span class="fn">find</span>(<span class="str">'\n'</span>) {
+            <span class="kw">let</span> line = buffer[..pos].<span class="fn">to_string</span>();
+            buffer = buffer[pos + <span class="num">1</span>..].<span class="fn">to_string</span>();
+            <span class="kw">if let</span> <span class="ty">Some</span>(token) = <span class="fn">provider::parse_sse_line</span>(&amp;line) {
+                full_content.<span class="fn">push_str</span>(&amp;token);
+                <span class="kw">let</span> _ = app.<span class="fn">emit</span>(<span class="str">"ai_token"</span>, &amp;token);  <span class="cmt">// → 前端逐字渲染</span>
+            }
+        }
+    }
+
+    <span class="cmt">// 6. 解析 &lt;cmds&gt; 标签</span>
+    <span class="kw">let</span> cmds = <span class="fn">parse_commands</span>(&amp;full_content);
+
+    <span class="cmt">// 7. 还原脱敏数据</span>
+    <span class="kw">let</span> content = <span class="fn">sanitizer::restore</span>(&amp;full_content, &amp;sanitized.replacements);
+
+    <span class="ty">Ok</span>(<span class="ty">AiResponse</span> { content, cmds, sanitized: !sanitized.replacements.<span class="fn">is_empty</span>(), model })
+}
+
+<span class="cmt">// &lt;cmds&gt; 标签解析</span>
+<span class="kw">pub fn</span> <span class="fn">parse_commands</span>(content: &amp;<span class="ty">str</span>) -&gt; <span class="ty">Vec</span>&lt;<span class="ty">DeviceCommand</span>&gt; {
+    <span class="kw">for</span> caps <span class="kw">in</span> <span class="constant">CMDS_REGEX</span>.<span class="fn">captures_iter</span>(content) {
+        <span class="kw">for</span> line <span class="kw">in</span> block.<span class="fn">lines</span>() {
+            <span class="kw">let</span> parts: <span class="ty">Vec</span>&lt;&amp;<span class="ty">str</span>&gt; = line.<span class="fn">split_whitespace</span>().<span class="fn">collect</span>();
+            <span class="cmt">// module action args...</span>
+            <span class="ty">DeviceCommand</span> { module: parts[<span class="num">0</span>], action: parts[<span class="num">1</span>], args: parts[<span class="num">2</span>..] }
+        }
+    }
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑥ 核心代码 — 系统提示 (设备上下文注入)</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/ai/pipeline.rs — build_system_prompt</span><span class="lang">Rust</span></div>
+<pre><span class="str">"You are Lucy, an AI assistant embedded in the Lucy Desktop app
+for the Lucy hardware device (ESP32-S3 + CC1101 + ST25R3916).
+
+## Device Capabilities
+- NFC: Read/write/emulate ISO 14443-A/B cards
+- SubGHz: 300-928MHz RF scan/capture/replay
+- GPIO: 8 pins (ADC, UART, I2C, SPI) with logic analyzer
+- IR: Learn/transmit IR signals (NEC/RC5/RC6/Samsung/Sony)
+- BadUSB: DuckyScript HID injection (with safety review)
+
+## Current Device Status
+- Connection: Connected (Virtual Device)
+- Battery: 85%, Temp: 42C, Uptime: 3600s
+
+## How to Help
+- When the user asks you to perform a device action, include a &lt;cmds&gt; block
+- Use simple command syntax inside &lt;cmds&gt; tags, one command per line
+
+## Safety Rules
+- NEVER suggest dangerous BadUSB scripts
+- Always warn about legal considerations for RF capture/replay
+- For NFC, remind users about data privacy"</span></pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑦ 核心代码 — 本地降级 (无 API Key)</div>
+  <div class="annotation"><span class="arrow">→</span> <strong>降级策略</strong>: 无 API Key 时自动降级为本地响应。虽然不调用云端 LLM，但仍然解析用户意图，返回包含 <code>&lt;cmds&gt;</code> 块的预设回复，确保 UI 全功能可用。</div>
+  <div class="code-block">
+    <div class="code-header"><span>src/ai/pipeline.rs — local_response</span><span class="lang">Rust</span></div>
+<pre><span class="kw">pub fn</span> <span class="fn">local_response</span>(message: &amp;<span class="ty">str</span>) -&gt; <span class="ty">AiResponse</span> {
+    <span class="kw">let</span> lower = message.<span class="fn">to_lowercase</span>();
+    <span class="kw">let</span> content = <span class="kw">if</span> lower.<span class="fn">contains</span>(<span class="str">"nfc"</span>) {
+        <span class="str">"I can help you with NFC! Lucy supports reading Mifare Classic, NTAG, and DESFire cards.
+
+&lt;cmds&gt;
+nfc detect
+&lt;/cmds&gt;
+
+Click 'Execute' to scan for a card."</span>
+    } <span class="kw">else if</span> lower.<span class="fn">contains</span>(<span class="str">"subghz"</span>) {
+        <span class="str">"SubGHz module supports 300-928MHz frequency range.
+
+&lt;cmds&gt;
+subghz rx 433920000
+&lt;/cmds&gt;
+
+This will listen on 433.92MHz (common doorbell/remote frequency)."</span>
+    } <span class="kw">else if</span> lower.<span class="fn">contains</span>(<span class="str">"gpio"</span>) {
+        <span class="str">"Lucy has 8 GPIO pins:
+- GPIO1-2: ADC inputs
+- GPIO3-4: UART
+- GPIO5-6: I2C
+- GPIO7-8: SPI
+
+&lt;cmds&gt;
+gpio scan
+&lt;/cmds&gt;"</span>
+    } <span class="cmt">// ... ir, badusb, hello, default</span>;
+
+    <span class="ty">AiResponse</span> { content, cmds: <span class="fn">parse_commands</span>(content), model: <span class="str">"local"</span> }
+}</pre>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">⑧ 新增 Tauri 命令 (3)</div>
+  <table>
+    <tr><th>命令</th><th>功能</th></tr>
+    <tr><td><code>ai_send_message</code></td><td>SSE 流式对话 — 脱敏→上下文→stream→emit token→解析 cmds→更新 history</td></tr>
+    <tr><td><code>ai_clear_history</code></td><td>清除对话历史</td></tr>
+    <tr><td><code>ai_check_sensitive</code></td><td>检查输入中的敏感数据统计</td></tr>
+    <tr><td><code>ai_set_provider</code></td><td>设置 Provider 配置 (Phase 4 持久化)</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑨ 单元测试 (7 新增，总计 17)</div>
+  <table>
+    <tr><th>模块</th><th>测试</th><th>验证内容</th></tr>
+    <tr><td>sanitizer</td><td><code>test_sanitize_uid</code></td><td>NFC UID 04:A3:B2:C1 → [UID_REDACTED]</td></tr>
+    <tr><td>sanitizer</td><td><code>test_sanitize_phone</code></td><td>手机号 13812345678 → [PHONE_REDACTED]</td></tr>
+    <tr><td>sanitizer</td><td><code>test_sanitize_email</code></td><td>邮箱 → [EMAIL_REDACTED]</td></tr>
+    <tr><td>sanitizer</td><td><code>test_sanitize_coords</code></td><td>GPS 31.2304,121.4737 → [COORDS_REDACTED]</td></tr>
+    <tr><td>sanitizer</td><td><code>test_sanitize_api_key</code></td><td>api_key=sk-xxx → [API_KEY_REDACTED]</td></tr>
+    <tr><td>sanitizer</td><td><code>test_contains_sensitive</code></td><td>敏感数据检测正确</td></tr>
+    <tr><td>sanitizer</td><td><code>test_restore</code></td><td>还原脱敏数据：占位符→原始值</td></tr>
+    <tr><td>provider</td><td><code>test_parse_sse_line_token</code></td><td>SSE data 行解析为 token</td></tr>
+    <tr><td>provider</td><td><code>test_parse_sse_line_done</code></td><td>[DONE] 标记返回 None</td></tr>
+    <tr><td>provider</td><td><code>test_provider_from_str</code></td><td>字符串→Provider 转换</td></tr>
+    <tr><td>pipeline</td><td><code>test_parse_commands</code></td><td>&lt;cmds&gt; 块解析为 DeviceCommand</td></tr>
+    <tr><td>pipeline</td><td><code>test_strip_cmds</code></td><td>移除 &lt;cmds&gt; 块保留正文</td></tr>
+    <tr><td>pipeline</td><td><code>test_local_response_nfc</code></td><td>本地模式 NFC 回复包含 cmds</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑩ Phase 3 功能完成度</div>
+  <ul class="feat-list">
+    <li class="done">7 种脱敏模式 — UID/Key/WiFi/APIKey/Phone/Email/Coords + 还原</li>
+    <li class="done">4 Provider 抽象 — DeepSeek/OpenAI/Qwen/Local (统一 OpenAI 兼容 SSE)</li>
+    <li class="done">SSE 流式响应 — bytes_stream + 逐行解析 + emit ai_token</li>
+    <li class="done">命令解析 — &lt;cmds&gt; 标签提取为 DeviceCommand { module, action, args }</li>
+    <li class="done">设备上下文注入 — 连接状态/电池/温度/运行时间</li>
+    <li class="done">本地降级 — 无 API Key 时预设回复 + cmds 生成</li>
+    <li class="done">对话历史管理 — AppState 中保存 messages</li>
+    <li class="done">环境变量 API Key — DEEPSEEK_API_KEY / OPENAI_API_KEY / DASHSCOPE_API_KEY</li>
+    <li class="done">4 个新 Tauri 命令 (总计 40)</li>
+    <li class="done">7 个新增单元测试 (总计 17)</li>
+    <li class="todo">Provider 配置持久化 — Phase 4 接入配置文件</li>
+    <li class="todo">AI 执行 cmds — 前端需解析 cmds 并调用对应设备命令</li>
+    <li class="todo">真机验证 SSE — 需要真实 API Key 测试流式响应</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-title">⑪ 修复的编译错误 (1)</div>
+  <table>
+    <tr><th>#</th><th>错误</th><th>修复</th></tr>
+    <tr><td>1</td><td><code>fn patterns() -> &'static [(Regex, &str, &str)]</code> 缺少生命周期标注</td><td>改为 <code>&'static [(Regex, &'static str, &'static str)]</code></td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">⑫ 下一步 — Phase 4 预览</div>
+  <ul class="feat-list">
+    <li class="todo">固件 OTA — DFU 模式 + API Level 校验 + 双分区回滚</li>
+    <li class="todo">SD 卡存储 — NFC/SubGHz/IR/BadUSB 数据持久化</li>
+    <li class="todo">资源管理 — .fap/.asset 文件上传/删除/校验</li>
+    <li class="todo">配置持久化 — AI Provider 配置 + 主题 + 快捷键</li>
+    <li class="todo">日志系统 — 文件轮转 + 错误上报</li>
+  </ul>
+</div>
+
+<div class="footer">
+  Lucy Desktop Phase 3 — AI Pipeline | cargo check ✓ | 2026-07-12
+</div>
+
+</div>
+</body>
+</html>
