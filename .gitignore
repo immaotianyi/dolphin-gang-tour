@@ -1,24 +1,15 @@
-# ==================== 依赖目录 ====================
+# Dependencies
 node_modules/
-flipper-ai-tutor/node_modules/
-lucy/desktop/node_modules/
 
-# ==================== 构建产物 ====================
-# Rust 编译产物
-flipper-ai-tutor/src-tauri/target/
-flipper-ai-tutor/src-tauri/Cargo.lock
-lucy/desktop/src-tauri/target/
-lucy/desktop/src-tauri/Cargo.lock
+# Build output
+dist/
+src-tauri/target/
+src-tauri/gen/
 
-# 前端构建产物
-flipper-ai-tutor/dist/
-lucy/desktop/dist/
+# Lock files (keep package-lock.json, ignore Cargo.lock for libraries)
+src-tauri/Cargo.lock
 
-# Tauri 构建产物
-flipper-ai-tutor/src-tauri/gen/
-lucy/desktop/src-tauri/gen/
-
-# ==================== IDE / 编辑器 ====================
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -26,35 +17,23 @@ lucy/desktop/src-tauri/gen/
 *~
 .DS_Store
 
-# ==================== 环境变量 / 密钥 ====================
+# Environment
 .env
 .env.local
 .env.*.local
 *.pem
 *.key
 
-# ==================== 日志 / 临时文件 ====================
+# Logs
 *.log
-/tmp/
-flipper-ai-tutor/src-tauri/WixTools/
 
-# ==================== 操作系统文件 ====================
+# OS
 Thumbs.db
 Desktop.ini
-$RECYCLE.BIN/
 
-# ==================== 大文件 / 媒体 ====================
+# Local app data
+.lucy/
+
+# Media
 *.mp4
 *.mov
-*.avi
-
-# ==================== TRAE 工作目录 ====================
-.trae-html-share-packages/
-flipperzero-ai-tutor-fixed.zip
-
-# ==================== Chrome 调试缓存 ====================
-.chrome-profile*/
-*.zip
-
-# ==================== Lucy 本地数据 ====================
-.lucy/
