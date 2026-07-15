@@ -37,3 +37,26 @@ Desktop.ini
 # Media
 *.mp4
 *.mov
+
+# Hardware - KiCad backup/temp
+*.bak
+*.bck
+*.sch-bak
+*.kicad_pcb-bak
+*-backups/
+*-cache.lib
+*-rescue.lib
+*.kicad_prl
+fp-info-cache
+
+# Hardware - Gerber loose files (keep zip archives)
+hardware/gerber/*.gbr
+hardware/gerber/*.drl
+hardware/gerber/*.gko
+hardware/gerber/*.gtl
+hardware/gerber/*.gbl
+hardware/gerber/*.gts
+hardware/gerber/*.gbs
+hardware/gerber/*.gto
+hardware/gerber/*.gbo
+hardware/gerber/*.gm1
